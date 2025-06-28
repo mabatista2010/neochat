@@ -1,26 +1,228 @@
 @import "tailwindcss";
 
+/* Importar fuentes terminal */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #00ff00;
+  --terminal-green: #00ff00;
+  --terminal-green-dark: #008000;
+  --terminal-green-light: #40ff40;
+  --terminal-cyan: #00ffff;
+  --terminal-yellow: #ffff00;
+  --terminal-magenta: #ff00ff;
+  --terminal-orange: #ff6600;
+  --terminal-gray: #333333;
+  --terminal-gray-light: #666666;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+  /* Prevent zoom on iOS */
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
 }
 
 body {
+  height: 100%;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  overflow: hidden;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+  /* Better touch support */
+  touch-action: manipulation;
+}
+
+/* Mobile viewport fix */
+@supports (-webkit-touch-callout: none) {
+  html {
+    height: -webkit-fill-available;
+  }
+  
+  body {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--terminal-green-dark);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--terminal-green);
+}
+
+/* Efectos de glow */
+.glow {
+  text-shadow: 0 0 5px currentColor;
+}
+
+.glow-border {
+  box-shadow: 0 0 10px var(--terminal-green);
+}
+
+/* Animaciones terminal */
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.typing-animation {
+  animation: typing 1s steps(40) 1s forwards;
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+}
+
+/* Selección de texto */
+::selection {
+  background: var(--terminal-green);
+  color: var(--background);
+}
+
+::-moz-selection {
+  background: var(--terminal-green);
+  color: var(--background);
+}
+
+/* Focus outlines personalizados */
+*:focus {
+  outline: none;
+}
+
+button:focus,
+input:focus {
+  box-shadow: 0 0 0 2px var(--terminal-green);
+}
+
+/* Transiciones suaves */
+* {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Disable text selection for UI elements */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Better button touch targets */
+  button {
+    min-height: 44px;
+  }
+  
+  /* Better input touch targets */
+  input {
+    min-height: 44px;
+  }
+  
+  /* Prevent zoom on input focus */
+  input[type="text"] {
+    font-size: 16px;
+  }
+  
+  /* Better scrolling on mobile */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Tablet specific adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Slightly larger text for better readability */
+  .text-xs {
+    font-size: 0.8rem;
+  }
+  
+  .text-sm {
+    font-size: 0.9rem;
+  }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Sharper text rendering */
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* Dark mode support (already dark, but ensures consistency) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --foreground: #00ff00;
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-pulse,
+  .animate-spin {
+    animation: none !important;
+  }
+}
+
+/* Better focus indicators for keyboard navigation */
+@media (prefers-reduced-motion: no-preference) {
+  button:focus-visible,
+  input:focus-visible {
+    animation: glow-pulse 1s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes glow-pulse {
+  from {
+    box-shadow: 0 0 0 2px var(--terminal-green);
+  }
+  to {
+    box-shadow: 0 0 0 2px var(--terminal-green), 0 0 10px var(--terminal-green);
+  }
 }
