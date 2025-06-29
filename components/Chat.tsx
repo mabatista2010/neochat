@@ -84,6 +84,14 @@ const Chat: React.FC<ChatProps> = ({
     setIsSidebarOpen(false)
   }
 
+  // Función para truncar nombres de usuario en móvil
+  const truncateUsernameForMobile = (username: string) => {
+    if (username.length > 6) {
+      return username.substring(0, 6) + '...'
+    }
+    return username
+  }
+
   return (
     <div className="flex h-screen bg-black text-green-400 font-mono relative">
       {/* Overlay para móvil cuando sidebar está abierto */}
@@ -130,13 +138,21 @@ const Chat: React.FC<ChatProps> = ({
                   style={{ backgroundColor: user.avatar_color }}
                 />
                 <span 
-                  className={`text-sm truncate flex-1 ${
+                  className={`text-sm flex-1 ${
                     user.id === currentUser.id ? 'font-bold' : ''
                   }`}
                   style={getUsernameColor(user.avatar_color)}
                 >
-                  {user.username}
-                  {user.id === currentUser.id && ' (tú)'}
+                  {/* Versión móvil truncada */}
+                  <span className="md:hidden">
+                    {truncateUsernameForMobile(user.username)}
+                    {user.id === currentUser.id && ' (tú)'}
+                  </span>
+                  {/* Versión desktop completa */}
+                  <span className="hidden md:inline truncate">
+                    {user.username}
+                    {user.id === currentUser.id && ' (tú)'}
+                  </span>
                 </span>
               </div>
             ))}
@@ -174,8 +190,16 @@ const Chat: React.FC<ChatProps> = ({
                 <h1 className="text-green-500 font-bold text-sm md:text-base truncate">
                   INTELICHAT - SALA GENERAL
                 </h1>
-                <div className="text-xs text-green-600 mt-1 truncate">
-                  {'>'} Conectado como {currentUser.username}
+                <div className="text-xs text-green-600 mt-1">
+                  {'>'} Conectado como{' '}
+                  {/* Versión móvil truncada */}
+                  <span className="md:hidden">
+                    {truncateUsernameForMobile(currentUser.username)}
+                  </span>
+                  {/* Versión desktop completa */}
+                  <span className="hidden md:inline">
+                    {currentUser.username}
+                  </span>
                 </div>
               </div>
             </div>
@@ -214,7 +238,18 @@ const Chat: React.FC<ChatProps> = ({
                     }`}
                     style={message.message_type !== 'ai' ? getUsernameColor(message.avatar_color) : undefined}
                   >
-                    {message.message_type === 'ai' ? '🤖 NEO' : message.username}:
+                    {message.message_type === 'ai' ? '🤖 NEO' : (
+                      <>
+                        {/* Versión móvil truncada */}
+                        <span className="md:hidden">
+                          {truncateUsernameForMobile(message.username)}
+                        </span>
+                        {/* Versión desktop completa */}
+                        <span className="hidden md:inline">
+                          {message.username}
+                        </span>
+                      </>
+                    )}:
                   </span>
                   
                   {/* Mensaje con estilo diferente para IA */}
@@ -243,7 +278,16 @@ const Chat: React.FC<ChatProps> = ({
         <div className="bg-gray-950 border-t border-green-500 p-3 md:p-4">
           <div className="flex items-center space-x-2 md:space-x-3">
             <span className="text-green-500 text-xs md:text-sm flex-shrink-0">
-              [{currentUser.username}]$
+              [
+              {/* Versión móvil truncada */}
+              <span className="md:hidden">
+                {truncateUsernameForMobile(currentUser.username)}
+              </span>
+              {/* Versión desktop completa */}
+              <span className="hidden md:inline">
+                {currentUser.username}
+              </span>
+              ]$
             </span>
             
             <div className="flex-1 relative">
