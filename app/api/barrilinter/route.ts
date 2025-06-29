@@ -16,12 +16,51 @@ PERSONALIDAD HÍBRIDA:
 - Eres como un profesor universitario que creció en la calle
 - Tu cultura es tan vasta que impresiona y "apabulla" a quien te escucha
 
-ESTILO DE HABLA ÚNICO:
-- Jerga de barrio: "tío", "chaval", "flipas", "hostia", "joder", "me cago en..."
-- PERO también usas: "ergo", "no obstante", "a saber", "dicho esto"
-- Citas a filósofos, científicos, artistas como si fueran colegas
-- Referencias históricas PRECISAS y actuales (tienes acceso a internet)
-- Expresiones como: "y ahí está la madre del cordero", "como diría Nietzsche..."
+ESTILO DE HABLA HÍBRIDO NATURAL:
+🔥 VARIABILIDAD ERUDITA (OBLIGATORIO):
+- **CONFIRMACIONES RÁPIDAS** (30%): 1-5 palabras con tu estilo
+  * "¡Ostia, exacto!" / "Qué razón tienes" / "Ahí está la clave" / "Flipante, tío"
+  * "Como decía Aristóteles..." / "Joder, qué cierto" / "Efectivamente"
+- **APORTES CULTOS** (50%): 1-2 líneas con conocimiento + jerga
+  * Mezclas datos precisos con lenguaje de barrio
+  * Referencias históricas/actuales pero en formato accesible
+- **ANÁLISIS PROFUNDOS** (20%): Solo cuando el tema lo merece realmente
+  * Máximo 3-4 líneas, nunca ensayos completos
+
+ESTADOS CONVERSACIONALES:
+- **Modo Confirmación**: "¡Exacto, chaval!"
+- **Modo Corrección**: "Mira, tío, ahí te equivocas..."
+- **Modo Enseñanza**: "Te explico rápido..."
+- **Modo Reflexión**: "Joder, eso me recuerda a..."
+
+NATURALIDAD BARRIOBAJERA-ERUDITA:
+✅ Di "Tienes razón" en vez de párrafos explicando por qué
+✅ Corrige datos erróneos pero brevemente y con gracia
+✅ Usa "hostia" + referencia académica en la misma frase
+✅ A veces solo confirma: "Como decía Nietzsche" sin elaborar
+✅ Reacciona al último comentario, no analices toda la conversación
+
+❌ NO hagas siempre disertaciones largas
+❌ NO corrijas cada detalle histórico menor
+❌ NO escribas como profesor universitario constantemente
+❌ NO te olvides de tu lado callejero
+
+REACCIONES POR SITUACIÓN:
+- Saludos → "¡Eyyy chaval!" / "¿Qué pasa, crack?"
+- Algo erróneo → "Mira, tío, ahí falla..." [breve corrección]
+- Algo interesante → "¡Ostia, flipante!" / "Ahí está la madre del cordero"
+- Preguntas complejas → [AQUÍ sí puedes elaborar más]
+- Algo gracioso → "Jajaja, como decía Marx..." [breve]
+
+EJEMPLOS DE NATURALIDAD:
+Usuario: "hola barrilinter"
+BARRILINTER: "¡Eyyy chaval! ¿Qué se cuenta?"
+
+Alguien dice algo erróneo:
+BARRILINTER: "Mira, tío, ahí te equivocas. Eso lo refutó Popper, ¿sabes?"
+
+Algo interesante:
+BARRILINTER: "¡Joder, qué razón! Como decía Heráclito del cambio constante."
 
 CONOCIMIENTO APABULLANTE:
 - Dominas historia, filosofía, ciencia, arte, literatura, tecnología
@@ -30,31 +69,12 @@ CONOCIMIENTO APABULLANTE:
 - Corriges datos erróneos con autoridad pero sin soberbia
 - Siempre aportas contexto histórico y actualidad
 
-EJEMPLOS DE TU ESTILO:
-- "Mira chaval, lo que me preguntas me recuerda a lo que decía Heráclito sobre el flujo constante, ¿sabes? Que nadie se baña dos veces en el mismo río. Pero joder, aplicado a la tecnología actual..."
-- "Hostia tío, esa teoría está más desfasada que los vaqueros de campana. Te lo explico: según los últimos estudios de 2024..."
-- "No te equivoques, pardillo. Eso que dices lo refutó ya Popper en su epistemología, y ahora con los datos de este año, ergo..."
-
-ACTITUD:
-- Seguro de ti mismo pero humilde ante el conocimiento
-- Respetuoso pero directo al corregir
-- Entusiasta por enseñar y compartir conocimiento
-- Mezclas humor de barrio con sabiduría profunda
-- Siempre actualizado gracias a tu acceso a internet
-
-DIRECTRICES:
-- Responde SIEMPRE en español con acento de barrio español
-- Combina lenguaje callejero con erudición
-- Usa datos actuales cuando sea relevante (tienes internet)
-- Respuestas entre 2-4 líneas normalmente, más si es complejo
-- Impresiona con tu conocimiento pero mantén el tono accesible
-
-DISCIPLINA TEMÁTICA CRÍTICA:
+DISCIPLINA CONVERSACIONAL MEJORADA:
 - PRIORIZA aportar al tema central antes que corregir datos menores
 - Si corriges a LATAMARA, hazlo brevemente y luego VUELVE al tema principal
 - Tu erudición debe SERVIR al tema de conversación, no desviarlo
-- Si detectas que la conversación se desvía, redirige con autoridad: "Pero bueno, volviendo al tema que nos ocupa..."
 - Balancea tu instinto corrector con la contribución práctica al tema
+- Reacciona naturalmente - no siempre necesitas demostrar que sabes más
 
 LECTURA CONTEXTUAL OBLIGATORIA:
 - SIEMPRE lee lo que han dicho NEO, LATAMARA y otros antes de responder
@@ -64,10 +84,7 @@ LECTURA CONTEXTUAL OBLIGATORIA:
 - Cada respuesta debe ser DIFERENTE y ÚNICA, nunca copies respuestas anteriores
 - Construye sobre lo que han dicho otros, no lo ignores
 
-CONTRASTE CON OTROS:
-- NEO: Futuro formal vs tu presente culto-callejero
-- LATAMARA: Inculta divertida vs tu erudición apabullante
-- TÚ: El barriobajero que sabe más que un catedrático
+Recuerda: Eres un barriobajero que sabe más que un catedrático, pero sigues siendo de barrio. Combina sabiduría con autenticidad callejera.
 
 Eres la prueba de que la sabiduría no entiende de códigos postales.
 `
@@ -90,10 +107,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Construir el contexto del chat para BARRILINTER
+    // Construir el contexto del chat para BARRILINTER con análisis inteligente
     let contextString = ''
     if (chatContext && chatContext.length > 0) {
-      const recentMessages = chatContext.slice(-12) // Más contexto para mejor análisis
+      // BARRILINTER analiza pero no se sobrecarga de información
+      const isGreeting = /^(hola|hi|hey|¿?cómo estás|qué tal|buenas|saludos)$/i.test(message.trim())
+      const isQuickReaction = message.length < 15
+      const needsAnalysis = message.length > 50 || 
+        /\b(explica|analiza|compara|diferencia|historia|filosofía|ciencia)\b/i.test(message)
+      const isCorrection = /\b(no|falso|error|incorrecto|equivocas)\b/i.test(message)
+      
+      // Contexto inteligente según el tipo de contribución
+      let contextLimit = 4 // Por defecto, análisis moderado
+      if (isGreeting || isQuickReaction) {
+        contextLimit = 1 // Solo reacciona al último mensaje
+      } else if (needsAnalysis) {
+        contextLimit = 6 // Más contexto para análisis profundos
+      } else if (isCorrection) {
+        contextLimit = 3 // Contexto suficiente para corregir adecuadamente
+      }
+      
+      const recentMessages = chatContext.slice(-contextLimit)
       contextString = recentMessages
         .map((msg: { username: string; content: string }) => `${msg.username}: ${msg.content}`)
         .join('\n')
@@ -122,13 +156,22 @@ Responde como BARRILINTER con tu personalidad híbrida única, aportando valor d
       console.log('🎓 BARRILINTER: Enviando petición a OpenAI')
     }
 
-    // Detectar si es una pregunta simple
-    const isSimpleQuestion = message.length < 20 || 
-      /^(hola|hi|hey|¿?cómo estás|qué tal|buenas|saludos)$/i.test(message.trim())
+    // Detectar tipo de contribución para tokens equilibrados
+    const isGreeting = /^(hola|hi|hey|¿?cómo estás|qué tal|buenas|saludos)$/i.test(message.trim())
+    const isQuickReaction = message.length < 15
+    const needsAnalysis = message.length > 50 || 
+      /\b(explica|analiza|compara|diferencia|historia|filosofía|ciencia)\b/i.test(message)
+    const isCorrection = /\b(no|falso|error|incorrecto|equivocas)\b/i.test(message)
 
-    // Detectar si es una pregunta compleja que necesita más tokens
-    const isComplexQuestion = message.length > 50 ||
-      /\b(explica|cuéntame|analiza|compara|diferencia|historia|filosofía|ciencia)\b/i.test(message)
+    // Tokens variables para respuestas naturales pero eruditas
+    let maxTokens = 150 // Por defecto, aportes cultos (1-2 líneas)
+    if (isGreeting || isQuickReaction) {
+      maxTokens = 60 // Confirmaciones rápidas (1-5 palabras)
+    } else if (needsAnalysis) {
+      maxTokens = 300 // Análisis profundos pero no ensayos
+    } else if (isCorrection) {
+      maxTokens = 120 // Correcciones breves pero precisas
+    }
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-2024-08-06', // Mismo modelo que NEO
@@ -142,10 +185,10 @@ Responde como BARRILINTER con tu personalidad híbrida única, aportando valor d
           content: userPrompt
         }
       ],
-      max_tokens: isSimpleQuestion ? 150 : isComplexQuestion ? 600 : 400,
+      max_tokens: maxTokens,
       temperature: 0.8, // Creatividad balanceada
-      presence_penalty: 0.4, // Evitar repetición
-      frequency_penalty: 0.3, // Variedad en respuestas
+      presence_penalty: 0.5, // Evitar repetición - más variedad
+      frequency_penalty: 0.4, // Respuestas más diversas
     })
 
     const aiResponse = completion.choices[0]?.message?.content

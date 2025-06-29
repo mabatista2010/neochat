@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { AI_AGENTS } from '../lib/ai-agents'
 
 interface AdminControlProps {
   isAdmin: boolean
@@ -10,10 +11,13 @@ interface AdminControlProps {
 interface ConversationStatus {
   is_active: boolean
   current_topic: string
-  speed: number
+  conversation_speed: number
   neo_enabled: boolean
   latamara_enabled: boolean
   barrilinter_enabled: boolean
+  laconchita_enabled: boolean
+  marktukemberg_enabled: boolean
+  robertthecoach_enabled: boolean
   last_speaker: string
 }
 
@@ -59,8 +63,8 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
     }
   }, [status?.is_active])
 
-  const getDelayFromSpeed = (speed: number): number => {
-    switch (speed) {
+  const getDelayFromSpeed = (conversation_speed: number): number => {
+    switch (conversation_speed) {
       case 1: return 45000 // 45s - lento
       case 2: return 20000 // 20s - normal  
       case 3: return 8000  // 8s - rápido
@@ -71,7 +75,7 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
   const startConversationEngine = () => {
     if (!status) return
 
-    const delay = getDelayFromSpeed(status.speed)
+    const delay = getDelayFromSpeed(status.conversation_speed)
     
     // Generar primer mensaje inmediatamente
     generateMessage()
@@ -186,7 +190,7 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
     setShowCustomTopic(false);
   }
 
-  const toggleAgent = (agent: 'neo' | 'latamara' | 'barrilinter') => {
+  const toggleAgent = (agent: string) => {
     const agentKey = `${agent}_enabled`;
     const currentValue = status?.[agentKey as keyof ConversationStatus];
     executeAction('toggle_agents', { [agentKey]: !currentValue });
@@ -246,7 +250,7 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
         
         {status && (
           <div className="text-xs text-green-700 mt-2 space-y-1">
-            <div><strong>Velocidad:</strong> {status.speed === 1 ? 'Lenta (45s)' : status.speed === 2 ? 'Normal (20s)' : 'Rápida (8s)'}</div>
+            <div><strong>Velocidad:</strong> {status.conversation_speed === 1 ? 'Lenta (45s)' : status.conversation_speed === 2 ? 'Normal (20s)' : 'Rápida (8s)'}</div>
             <div><strong>Tema:</strong> {status.current_topic.slice(0, 60)}{status.current_topic.length > 60 ? '...' : ''}</div>
             {status.last_speaker && <div><strong>Último:</strong> {status.last_speaker}</div>}
           </div>
@@ -289,39 +293,41 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
       <div className="bg-gray-950 bg-opacity-30 p-3 rounded-lg">
         <div className="text-xs text-green-400 font-semibold mb-2">🤖 CONTROL DE AGENTES</div>
         <div className="space-y-2">
-          {[
-            { key: 'neo', name: 'NEO', color: 'cyan', icon: '🤖' },
-            { key: 'latamara', name: 'LATAMARA', color: 'pink', icon: '👱‍♀️' },
-            { key: 'barrilinter', name: 'BARRILINTER', color: 'orange', icon: '🎓' }
-                     ].map(agent => {
-             const enabled = status?.[`${agent.key}_enabled` as keyof ConversationStatus] as boolean;
+          {AI_AGENTS.map(agent => {
+             const enabled = status?.[`${agent.id.toLowerCase()}_enabled` as keyof ConversationStatus] as boolean;
              
              // Clases específicas para cada agente
              const getAgentClasses = () => {
                if (!enabled) return 'bg-gray-800 border border-gray-600 text-gray-500';
                
-               switch(agent.key) {
-                 case 'neo':
-                   return 'bg-cyan-950 bg-opacity-30 border border-cyan-600 text-cyan-400';
-                 case 'latamara':
-                   return 'bg-pink-950 bg-opacity-30 border border-pink-600 text-pink-400';
-                 case 'barrilinter':
-                   return 'bg-orange-950 bg-opacity-30 border border-orange-600 text-orange-400';
-                 default:
-                   return 'bg-gray-800 border border-gray-600 text-gray-500';
-               }
+                               switch(agent.id.toLowerCase()) {
+                  case 'neo':
+                    return 'bg-cyan-950 bg-opacity-30 border border-cyan-600 text-cyan-400';
+                  case 'latamara':
+                    return 'bg-pink-950 bg-opacity-30 border border-pink-600 text-pink-400';
+                  case 'barrilinter':
+                    return 'bg-orange-950 bg-opacity-30 border border-orange-600 text-orange-400';
+                  case 'laconchita':
+                    return 'bg-pink-950 bg-opacity-30 border border-pink-600 text-pink-400';
+                  case 'marktukemberg':
+                    return 'bg-green-950 bg-opacity-30 border border-green-600 text-green-400';
+                  case 'robertthecoach':
+                    return 'bg-orange-950 bg-opacity-30 border border-orange-600 text-orange-400';
+                  default:
+                    return 'bg-gray-800 border border-gray-600 text-gray-500';
+                }
              };
              
              return (
                <button
-                 key={agent.key}
-                 onClick={() => toggleAgent(agent.key as any)}
+                 key={agent.id}
+                 onClick={() => toggleAgent(agent.id.toLowerCase())}
                  disabled={actionLoading}
                  className={`w-full flex items-center justify-between p-2 rounded text-xs transition-colors ${getAgentClasses()}`}
                >
                 <span className="flex items-center space-x-2">
                   <span>{agent.icon}</span>
-                  <span>{agent.name}</span>
+                  <span>{agent.id}</span>
                 </span>
                 <span className="font-semibold">
                   {enabled ? 'ON' : 'OFF'}
@@ -346,7 +352,7 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
               onClick={() => changeSpeed(speed.value)}
               disabled={actionLoading}
               className={`p-2 rounded text-xs transition-colors ${
-                status?.speed === speed.value
+                status?.conversation_speed === speed.value
                   ? 'bg-green-600 text-black font-semibold'
                   : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
               }`}

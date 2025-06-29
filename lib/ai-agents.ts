@@ -1,81 +1,93 @@
-// Configuración del sistema de usuarios online en tiempo real
-export const USER_ACTIVITY_CONFIG = {
-  // Tiempo máximo de inactividad antes de marcar usuario como offline (2 minutos - más agresivo)
-  MAX_INACTIVE_TIME: 2 * 60 * 1000,
-  
-  // Duración de notificaciones de conexión/desconexión (3 segundos)
-  NOTIFICATION_DURATION: 3 * 1000,
-  
-  // Lista de usuarios IA que siempre deben permanecer online
-  AI_USERS: ['NEO', 'LATAMARA', 'BARRILINTER', 'LACONCHITA', 'MARKTUKEMBERG', 'ROBERTTHECOACH'],
-  
-  // Debounce para eventos de actividad (100ms)
-  ACTIVITY_DEBOUNCE: 100
-} as const
-
-// Mensajes del sistema
-export const SYSTEM_MESSAGES = {
-  USER_CONNECTED: (username: string) => `🟢 ${username} se conectó`,
-  USER_DISCONNECTED: (username: string) => `🔴 ${username} se desconectó`,
-  ACTIVITY_UPDATED: (username: string) => `⚡ Actividad actualizada para: ${username}`,
-  REALTIME_CONNECTED: '⚡ Sistema en tiempo real conectado',
-  REALTIME_ERROR: '❌ Error en sistema en tiempo real'
-} as const
-
 // Información de los agentes IA para el sidebar
 export const AI_AGENTS = [
   {
+    id: 'neo',
     name: 'NEO',
     icon: '🤖',
     color: '#00ffff',
+    bgColor: 'bg-cyan-950',
+    textColor: 'text-cyan-400',
+    borderColor: 'border-cyan-400',
     command: '@neo',
+    usage: '@neo [mensaje]',
     description: 'IA del Futuro (2157)',
+    specialty: 'Análisis temporal y tecnología avanzada',
     specialties: ['Tecnología avanzada', 'Análisis temporal', 'Perspectiva futura'],
     example: '@neo ¿qué opinas del presente?'
   },
   {
+    id: 'latamara',
     name: 'LATAMARA',
     icon: '👱‍♀️',
     color: '#ff1493',
+    bgColor: 'bg-pink-950',
+    textColor: 'text-pink-400',
+    borderColor: 'border-pink-400',
     command: '@latamara',
+    usage: '@latamara [mensaje]',
     description: 'Choni de Vallecas',
+    specialty: 'Diversión y datos "únicos"',
     specialties: ['Diversión garantizada', 'Datos inventados', 'Geografía errónea'],
     example: '@latamara ¿dónde está París?'
   },
   {
+    id: 'barrilinter',
     name: 'BARRILINTER',
     icon: '🎓',
     color: '#ff8c00',
+    bgColor: 'bg-orange-950',
+    textColor: 'text-orange-400',
+    borderColor: 'border-orange-400',
     command: '@barrilinter',
+    usage: '@barrilinter [mensaje]',
     description: 'Erudito de Barrio',
+    specialty: 'Sabiduría accesible + info en tiempo real',
     specialties: ['Historia y filosofía', 'Sabiduría accesible', 'Info en tiempo real'],
     example: '@barrilinter explícame algo interesante'
   },
   {
+    id: 'laconchita',
     name: 'LACONCHITA',
     icon: '👵',
     color: '#ff69b4',
+    bgColor: 'bg-pink-950',
+    textColor: 'text-pink-300',
+    borderColor: 'border-pink-300',
     command: '@laconchita',
+    usage: '@laconchita [mensaje]',
     description: 'Abuela Sabia',
+    specialty: 'Consejos maternales y sabiduría popular',
     specialties: ['Consejos maternales', 'Refranes tradicionales', 'Sabiduría popular'],
     example: '@laconchita necesito un consejo'
   },
   {
+    id: 'marktukemberg',
     name: 'MARKTUKEMBERG',
     icon: '👨‍💻',
     color: '#00ff7f',
+    bgColor: 'bg-green-950',
+    textColor: 'text-green-400',
+    borderColor: 'border-green-400',
     command: '@marktukemberg',
+    usage: '@marktukemberg [mensaje]',
     description: 'Hacker Millennial',
+    specialty: 'Tecnología actual y cultura geek',
     specialties: ['Tecnología actual', 'Cultura geek', 'Memes y gaming'],
     example: '@marktukemberg qué opinas de esta app?'
   },
   {
+    id: 'robertthecoach',
     name: 'ROBERTTHECOACH',
     icon: '🏃‍♂️',
     color: '#ffa500',
+    bgColor: 'bg-orange-950',
+    textColor: 'text-orange-300',
+    borderColor: 'border-orange-300',
     command: '@robertthecoach',
+    usage: '@robertthecoach [mensaje]',
     description: 'Coach Motivador',
+    specialty: 'Motivación extrema y desarrollo personal',
     specialties: ['Motivación extrema', 'Desarrollo personal', 'Mindset ganador'],
     example: '@robertthecoach necesito motivación'
   }
-] as const
+] as const 

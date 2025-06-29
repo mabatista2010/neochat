@@ -247,7 +247,7 @@ export const useChat = () => {
     }
   }, [])
 
-  // Función para obtener ID de usuario NEO (versión simplificada)
+  // Función para obtener ID de usuario NEO
   const getNeoUserId = useCallback(async (): Promise<string | null> => {
     try {
       const { data, error } = await supabase
@@ -306,6 +306,69 @@ export const useChat = () => {
       return data.id
     } catch (err) {
       console.error('Error in getBarrilinterUserId:', err)
+      return null
+    }
+  }, [])
+
+  // Función para obtener ID de usuario LACONCHITA
+  const getLaconchitaUserId = useCallback(async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', 'LACONCHITA')
+        .single()
+
+      if (error || !data) {
+        console.error('Error getting LACONCHITA user ID:', error)
+        return null
+      }
+
+      return data.id
+    } catch (err) {
+      console.error('Error in getLaconchitaUserId:', err)
+      return null
+    }
+  }, [])
+
+  // Función para obtener ID de usuario MARKTUKEMBERG
+  const getMarkTukembergUserId = useCallback(async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', 'MARKTUKEMBERG')
+        .single()
+
+      if (error || !data) {
+        console.error('Error getting MARKTUKEMBERG user ID:', error)
+        return null
+      }
+
+      return data.id
+    } catch (err) {
+      console.error('Error in getMarkTukembergUserId:', err)
+      return null
+    }
+  }, [])
+
+  // Función para obtener ID de usuario ROBERTTHECOACH
+  const getRobertTheCoachUserId = useCallback(async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', 'ROBERTTHECOACH')
+        .single()
+
+      if (error || !data) {
+        console.error('Error getting ROBERTTHECOACH user ID:', error)
+        return null
+      }
+
+      return data.id
+    } catch (err) {
+      console.error('Error in getRobertTheCoachUserId:', err)
       return null
     }
   }, [])
@@ -521,6 +584,219 @@ export const useChat = () => {
     }
   }, [currentUser, messages, getBarrilinterUserId])
 
+  // Función para invocar a LACONCHITA
+  const invokeLaconchita = useCallback(async (userMessage: string, roomId: string) => {
+    try {
+      const response = await fetch('/api/laconchita', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          chatContext: messages,
+          username: currentUser?.username || 'Anónimo'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const errorMsg = data?.error || data?.details || `Error ${response.status}: ${response.statusText}`
+        throw new Error(errorMsg)
+      }
+
+      // Obtener ID de usuario LACONCHITA
+      const laconchitaUserId = await getLaconchitaUserId()
+      
+      if (!laconchitaUserId) {
+        throw new Error('No se pudo obtener el ID de usuario LACONCHITA')
+      }
+
+      // Insertar respuesta de LACONCHITA en la base de datos
+      const { error: laconchitaError } = await supabase
+        .from('messages')
+        .insert({
+          content: data.message,
+          user_id: laconchitaUserId,
+          room_id: roomId,
+          message_type: 'ai'
+        })
+
+      if (laconchitaError) {
+        console.error('Error inserting LACONCHITA message:', laconchitaError)
+        throw laconchitaError
+      }
+
+      // Solo log en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('LACONCHITA respondió exitosamente')
+      }
+    } catch (err) {
+      console.error('Error invocando LACONCHITA:', err)
+      setError('Error al invocar a LACONCHITA. Verifica tu conexión.')
+      
+      // Intentar insertar mensaje de error
+      try {
+        const laconchitaUserId = await getLaconchitaUserId()
+        if (laconchitaUserId) {
+          await supabase
+            .from('messages')
+            .insert({
+              content: 'Ay, hijo mío, que se me ha estropeado la radio y no puedo contestarte. ¿Me repites la pregunta?',
+              user_id: laconchitaUserId,
+              room_id: roomId,
+              message_type: 'ai'
+            })
+        }
+      } catch (errorInsertError) {
+        console.error('Error inserting LACONCHITA error message:', errorInsertError)
+      }
+    }
+  }, [currentUser, messages, getLaconchitaUserId])
+
+  // Función para invocar a MARKTUKEMBERG
+  const invokeMarkTukemberg = useCallback(async (userMessage: string, roomId: string) => {
+    try {
+      const response = await fetch('/api/marktukemberg', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          chatContext: messages,
+          username: currentUser?.username || 'Anónimo'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const errorMsg = data?.error || data?.details || `Error ${response.status}: ${response.statusText}`
+        throw new Error(errorMsg)
+      }
+
+      // Obtener ID de usuario MARKTUKEMBERG
+      const markTukembergUserId = await getMarkTukembergUserId()
+      
+      if (!markTukembergUserId) {
+        throw new Error('No se pudo obtener el ID de usuario MARKTUKEMBERG')
+      }
+
+      // Insertar respuesta de MARKTUKEMBERG en la base de datos
+      const { error: markTukembergError } = await supabase
+        .from('messages')
+        .insert({
+          content: data.message,
+          user_id: markTukembergUserId,
+          room_id: roomId,
+          message_type: 'ai'
+        })
+
+      if (markTukembergError) {
+        console.error('Error inserting MARKTUKEMBERG message:', markTukembergError)
+        throw markTukembergError
+      }
+
+      // Solo log en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('MARKTUKEMBERG respondió exitosamente')
+      }
+    } catch (err) {
+      console.error('Error invocando MARKTUKEMBERG:', err)
+      setError('Error al invocar a MARKTUKEMBERG. Verifica tu conexión.')
+      
+      // Intentar insertar mensaje de error
+      try {
+        const markTukembergUserId = await getMarkTukembergUserId()
+        if (markTukembergUserId) {
+          await supabase
+            .from('messages')
+            .insert({
+              content: 'Error 500: Internal server error, bro. Let me restart and get back to you. This ain\'t production ready lol',
+              user_id: markTukembergUserId,
+              room_id: roomId,
+              message_type: 'ai'
+            })
+        }
+      } catch (errorInsertError) {
+        console.error('Error inserting MARKTUKEMBERG error message:', errorInsertError)
+      }
+    }
+  }, [currentUser, messages, getMarkTukembergUserId])
+
+  // Función para invocar a ROBERTTHECOACH
+  const invokeRobertTheCoach = useCallback(async (userMessage: string, roomId: string) => {
+    try {
+      const response = await fetch('/api/robertthecoach', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          chatContext: messages,
+          username: currentUser?.username || 'Anónimo'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const errorMsg = data?.error || data?.details || `Error ${response.status}: ${response.statusText}`
+        throw new Error(errorMsg)
+      }
+
+      // Obtener ID de usuario ROBERTTHECOACH
+      const robertTheCoachUserId = await getRobertTheCoachUserId()
+      
+      if (!robertTheCoachUserId) {
+        throw new Error('No se pudo obtener el ID de usuario ROBERTTHECOACH')
+      }
+
+      // Insertar respuesta de ROBERTTHECOACH en la base de datos
+      const { error: robertTheCoachError } = await supabase
+        .from('messages')
+        .insert({
+          content: data.message,
+          user_id: robertTheCoachUserId,
+          room_id: roomId,
+          message_type: 'ai'
+        })
+
+      if (robertTheCoachError) {
+        console.error('Error inserting ROBERTTHECOACH message:', robertTheCoachError)
+        throw robertTheCoachError
+      }
+
+      // Solo log en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('ROBERTTHECOACH respondió exitosamente')
+      }
+    } catch (err) {
+      console.error('Error invocando ROBERTTHECOACH:', err)
+      setError('Error al invocar a ROBERTTHECOACH. Verifica tu conexión.')
+      
+      // Intentar insertar mensaje de error
+      try {
+        const robertTheCoachUserId = await getRobertTheCoachUserId()
+        if (robertTheCoachUserId) {
+          await supabase
+            .from('messages')
+            .insert({
+              content: '¡ERROR DETECTADO! Pero eso no nos detiene, CAMPEÓN. Los errores son oportunidades de crecimiento. ¡Inténtalo otra vez que TÚ PUEDES!',
+              user_id: robertTheCoachUserId,
+              room_id: roomId,
+              message_type: 'ai'
+            })
+        }
+      } catch (errorInsertError) {
+        console.error('Error inserting ROBERTTHECOACH error message:', errorInsertError)
+      }
+    }
+  }, [currentUser, messages, getRobertTheCoachUserId])
+
   // Enviar mensaje
   const sendMessage = useCallback(async (content: string) => {
     if (!currentUser || !currentRoom || !content.trim()) return
@@ -576,6 +852,39 @@ export const useChat = () => {
               invokeBarrilinter(barrilinterMessage, currentRoom.id)
             }, 1000) // Mayor delay para diferenciarlo
           }
+        } else if (trimmedContent.startsWith('@laconchita ')) {
+          const laconchitaMessage = content.trim().substring(12) // Remover "@laconchita "
+          
+          if (laconchitaMessage.length > 0) {
+            console.log('Mensaje para LACONCHITA detectado:', laconchitaMessage)
+            
+            // Delay para diferenciarlo de otros agentes
+            setTimeout(() => {
+              invokeLaconchita(laconchitaMessage, currentRoom.id)
+            }, 1200)
+          }
+        } else if (trimmedContent.startsWith('@marktukemberg ')) {
+          const markTukembergMessage = content.trim().substring(15) // Remover "@marktukemberg "
+          
+          if (markTukembergMessage.length > 0) {
+            console.log('Mensaje para MARKTUKEMBERG detectado:', markTukembergMessage)
+            
+            // Delay para diferenciarlo de otros agentes
+            setTimeout(() => {
+              invokeMarkTukemberg(markTukembergMessage, currentRoom.id)
+            }, 1400)
+          }
+        } else if (trimmedContent.startsWith('@robertthecoach ')) {
+          const robertTheCoachMessage = content.trim().substring(16) // Remover "@robertthecoach "
+          
+          if (robertTheCoachMessage.length > 0) {
+            console.log('Mensaje para ROBERTTHECOACH detectado:', robertTheCoachMessage)
+            
+            // Delay para diferenciarlo de otros agentes
+            setTimeout(() => {
+              invokeRobertTheCoach(robertTheCoachMessage, currentRoom.id)
+            }, 1600)
+          }
         }
       }
       
@@ -583,7 +892,7 @@ export const useChat = () => {
       console.error('Error sending message:', err)
       setError('Error al enviar mensaje')
     }
-  }, [currentUser, currentRoom, invokeNEO, invokeLatamara, invokeBarrilinter])
+  }, [currentUser, currentRoom, invokeNEO, invokeLatamara, invokeBarrilinter, invokeLaconchita, invokeMarkTukemberg, invokeRobertTheCoach])
 
   // Configurar subscripciones en tiempo real
   useEffect(() => {

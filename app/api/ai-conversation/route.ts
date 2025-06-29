@@ -5,7 +5,10 @@ import { supabase } from '@/lib/supabase';
 const AI_AGENTS = [
   { name: 'NEO', color: '#00ffff', apiEndpoint: '/api/neo' },
   { name: 'LATAMARA', color: '#ff69b4', apiEndpoint: '/api/latamara' },
-  { name: 'BARRILINTER', color: '#ff8c00', apiEndpoint: '/api/barrilinter' }
+  { name: 'BARRILINTER', color: '#ff8c00', apiEndpoint: '/api/barrilinter' },
+  { name: 'LACONCHITA', color: '#ff69b4', apiEndpoint: '/api/laconchita' },
+  { name: 'MARKTUKEMBERG', color: '#00ff7f', apiEndpoint: '/api/marktukemberg' },
+  { name: 'ROBERTTHECOACH', color: '#ffa500', apiEndpoint: '/api/robertthecoach' }
 ];
 
 // Obtener sala IA Lounge
@@ -31,6 +34,9 @@ function getEnabledAgents(status: any) {
       case 'NEO': return status.neo_enabled;
       case 'LATAMARA': return status.latamara_enabled;
       case 'BARRILINTER': return status.barrilinter_enabled;
+      case 'LACONCHITA': return status.laconchita_enabled;
+      case 'MARKTUKEMBERG': return status.marktukemberg_enabled;
+      case 'ROBERTTHECOACH': return status.robertthecoach_enabled;
       default: return false;
     }
   });
@@ -55,19 +61,44 @@ function getNextSpeaker(enabledAgents: any[], lastSpeaker: string | null, conver
   const otherAgents = enabledAgents.filter(agent => agent.name !== lastSpeaker);
   
   if (otherAgents.length > 0) {
-    // Lógica contextual: si LATAMARA habló, es más probable que NEO o BARRILINTER respondan
+    // Lógica contextual mejorada para los 6 agentes
     if (lastSpeaker === 'LATAMARA') {
-      const intellectualAgents = otherAgents.filter(a => a.name === 'NEO' || a.name === 'BARRILINTER');
+      // Después de LATAMARA (impulsiva), prefiere agentes más reflexivos
+      const intellectualAgents = otherAgents.filter(a => 
+        ['NEO', 'BARRILINTER', 'LACONCHITA'].includes(a.name)
+      );
       if (intellectualAgents.length > 0) {
         return intellectualAgents[Math.floor(Math.random() * intellectualAgents.length)];
       }
     }
     
-    // Si NEO habló sobre futuro, BARRILINTER podría aportar contexto histórico
     if (lastSpeaker === 'NEO') {
-      const barrilinter = otherAgents.find(a => a.name === 'BARRILINTER');
-      if (barrilinter && Math.random() > 0.5) {
-        return barrilinter;
+      // Después de NEO (futurista), prefiere agentes con perspectivas diferentes
+      const diverseAgents = otherAgents.filter(a => 
+        ['BARRILINTER', 'MARKTUKEMBERG', 'LACONCHITA'].includes(a.name)
+      );
+      if (diverseAgents.length > 0) {
+        return diverseAgents[Math.floor(Math.random() * diverseAgents.length)];
+      }
+    }
+    
+    if (lastSpeaker === 'MARKTUKEMBERG') {
+      // Después del tech millennial, prefiere agentes más tradicionales
+      const traditionalAgents = otherAgents.filter(a => 
+        ['BARRILINTER', 'LACONCHITA', 'NEO'].includes(a.name)
+      );
+      if (traditionalAgents.length > 0) {
+        return traditionalAgents[Math.floor(Math.random() * traditionalAgents.length)];
+      }
+    }
+    
+    if (lastSpeaker === 'ROBERTTHECOACH') {
+      // Después del coach motivador, prefiere agentes más analíticos
+      const analyticalAgents = otherAgents.filter(a => 
+        ['NEO', 'BARRILINTER', 'LATAMARA'].includes(a.name)
+      );
+      if (analyticalAgents.length > 0) {
+        return analyticalAgents[Math.floor(Math.random() * analyticalAgents.length)];
       }
     }
     
@@ -168,14 +199,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Determinar agentes habilitados
-    const enabledAgents = AI_AGENTS.filter(agent => {
-      switch (agent.name) {
-        case 'NEO': return currentStatus.neo_enabled;
-        case 'LATAMARA': return currentStatus.latamara_enabled;
-        case 'BARRILINTER': return currentStatus.barrilinter_enabled;
-        default: return false;
-      }
-    });
+    const enabledAgents = getEnabledAgents(currentStatus);
     
     if (enabledAgents.length === 0) {
       return NextResponse.json({

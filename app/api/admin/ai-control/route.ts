@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, action, topic, speed, neo_enabled, latamara_enabled, barrilinter_enabled } = body;
+    const { userId, action, topic, speed, neo_enabled, latamara_enabled, barrilinter_enabled, laconchita_enabled, marktukemberg_enabled, robertthecoach_enabled } = body;
     
     console.log('🎛️ POST ai-control:', { userId, action, topic, speed });
     
@@ -135,6 +135,9 @@ export async function POST(request: NextRequest) {
         if (neo_enabled !== undefined) updateData.neo_enabled = neo_enabled;
         if (latamara_enabled !== undefined) updateData.latamara_enabled = latamara_enabled;
         if (barrilinter_enabled !== undefined) updateData.barrilinter_enabled = barrilinter_enabled;
+        if (laconchita_enabled !== undefined) updateData.laconchita_enabled = laconchita_enabled;
+        if (marktukemberg_enabled !== undefined) updateData.marktukemberg_enabled = marktukemberg_enabled;
+        if (robertthecoach_enabled !== undefined) updateData.robertthecoach_enabled = robertthecoach_enabled;
         break;
         
       case 'clear_chat':
@@ -245,7 +248,10 @@ export async function POST(request: NextRequest) {
           participants: [
             ...(updateData.neo_enabled !== false ? ['NEO'] : []),
             ...(updateData.latamara_enabled !== false ? ['LATAMARA'] : []),
-            ...(updateData.barrilinter_enabled !== false ? ['BARRILINTER'] : [])
+            ...(updateData.barrilinter_enabled !== false ? ['BARRILINTER'] : []),
+            ...(updateData.laconchita_enabled !== false ? ['LACONCHITA'] : []),
+            ...(updateData.marktukemberg_enabled !== false ? ['MARKTUKEMBERG'] : []),
+            ...(updateData.robertthecoach_enabled !== false ? ['ROBERTTHECOACH'] : [])
           ],
           started_by: userId
         });

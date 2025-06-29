@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { MessageWithUser, User } from '@/lib/supabase'
 import { Room } from '@/hooks/useChat'
+import { AI_AGENTS } from '@/lib/ai-agents'
 import AdminControl from './AdminControl'
 
 interface ChatProps {
@@ -17,46 +18,6 @@ interface ChatProps {
   onlineNotification?: string | null
   isAdmin?: boolean
 }
-
-// Definición de agentes para escalabilidad
-const AI_AGENTS = [
-  {
-    id: 'neo',
-    name: 'NEO',
-    icon: '🤖',
-    color: '#00ffff',
-    bgColor: 'bg-cyan-950',
-    textColor: 'text-cyan-400',
-    borderColor: 'border-cyan-400',
-    description: 'IA del futuro (2157)',
-    usage: '@neo [mensaje]',
-    specialty: 'Análisis temporal y tecnología avanzada'
-  },
-  {
-    id: 'latamara',
-    name: 'LATAMARA', 
-    icon: '👱‍♀️',
-    color: '#ff69b4',
-    bgColor: 'bg-pink-950',
-    textColor: 'text-pink-400',
-    borderColor: 'border-pink-400',
-    description: 'Choni del barrio de Vallecas',
-    usage: '@latamara [mensaje]',
-    specialty: 'Diversión y datos "únicos"'
-  },
-  {
-    id: 'barrilinter',
-    name: 'BARRILINTER',
-    icon: '🎓', 
-    color: '#ff8c00',
-    bgColor: 'bg-orange-950',
-    textColor: 'text-orange-400',
-    borderColor: 'border-orange-400',
-    description: 'Erudito de barrio con internet',
-    usage: '@barrilinter [mensaje]',
-    specialty: 'Sabiduría accesible + info en tiempo real'
-  }
-]
 
 const Chat: React.FC<ChatProps> = ({ 
   messages, 
@@ -414,7 +375,7 @@ const Chat: React.FC<ChatProps> = ({
                 </div>
                 
                 <div className="text-xs text-green-600">
-                  {'>'} {currentUser.username} • {users.length} usuario{users.length !== 1 ? 's' : ''} • {AI_AGENTS.length} IA{AI_AGENTS.length !== 1 ? 's' : ''}
+                  {'>'} {currentUser.username} • {users.length} usuario{users.length !== 1 ? 's' : ''} • {AI_AGENTS.length} agentes IA
                 </div>
               </div>
             </div>
