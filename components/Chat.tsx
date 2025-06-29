@@ -68,18 +68,34 @@ const Chat: React.FC<ChatProps> = ({
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Scroll automático SOLO si estás al final del todo
+  // Verificar si el usuario está al final ANTES de que llegue el mensaje
+  const wasAtBottomRef = useRef(true)
+
+  // Detectar si está al final antes de que cambien los mensajes
   useEffect(() => {
     const container = messagesContainerRef.current
     if (!container) return
 
-    // Verificar si está al final (con muy poca tolerancia)
-    const { scrollTop, scrollHeight, clientHeight } = container
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Solo 10px de tolerancia
+    const checkIfAtBottom = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container
+      const threshold = 100 // Tolerancia razonable
+      wasAtBottomRef.current = scrollHeight - scrollTop - clientHeight <= threshold
+    }
 
-    // Solo hacer scroll si está realmente al final
-    if (isAtBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Verificar posición en scroll
+    container.addEventListener('scroll', checkIfAtBottom)
+    checkIfAtBottom() // Verificar posición inicial
+
+    return () => container.removeEventListener('scroll', checkIfAtBottom)
+  }, [])
+
+  // Scroll automático SOLO si estabas al final cuando llegó el mensaje
+  useEffect(() => {
+    if (wasAtBottomRef.current) {
+      // Pequeño delay para que el mensaje se renderice primero
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 50)
     }
   }, [messages])
 
@@ -101,10 +117,13 @@ const Chat: React.FC<ChatProps> = ({
 
   const handleSendMessage = () => {
     if (inputMessage.trim()) {
+      // Marcar que vamos a estar al final (porque enviamos mensaje)
+      wasAtBottomRef.current = true
+      
       onSendMessage(inputMessage.trim())
       setInputMessage('')
       
-      // Scroll al final cuando envías tu propio mensaje
+      // Siempre scroll al final cuando envías mensaje
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       }, 100)
