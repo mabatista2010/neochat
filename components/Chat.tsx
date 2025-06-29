@@ -2,14 +2,20 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { MessageWithUser, User } from '@/lib/supabase'
+import { Room } from '@/hooks/useChat'
+import AdminControl from './AdminControl'
 
 interface ChatProps {
   messages: MessageWithUser[]
   users: User[]
+  rooms: Room[]
+  currentRoom: Room | null
   currentUser: User
   onSendMessage: (message: string) => void
   onLogout: () => void
+  onChangeRoom: (room: Room) => void
   onlineNotification?: string | null
+  isAdmin?: boolean
 }
 
 // Definición de agentes para escalabilidad
@@ -55,15 +61,19 @@ const AI_AGENTS = [
 const Chat: React.FC<ChatProps> = ({ 
   messages, 
   users, 
+  rooms,
+  currentRoom,
   currentUser, 
   onSendMessage, 
   onLogout,
-  onlineNotification 
+  onChangeRoom,
+  onlineNotification,
+  isAdmin = false
 }) => {
   const [inputMessage, setInputMessage] = useState('')
   const [showCursor, setShowCursor] = useState(true)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'users' | 'agents'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'agents' | 'control'>('users')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -198,7 +208,7 @@ const Chat: React.FC<ChatProps> = ({
             <div className="flex-1">
               <h2 className="text-green-500 text-base font-bold mb-2">INTELICHAT</h2>
               
-              {/* Tabs para navegar entre usuarios y agentes */}
+              {/* Tabs para navegar entre usuarios, agentes y control */}
               <div className="flex bg-gray-800 rounded-lg p-1 mb-3">
                 <button
                   onClick={() => setActiveTab('users')}
@@ -218,8 +228,20 @@ const Chat: React.FC<ChatProps> = ({
                       : 'text-green-400 hover:text-green-300'
                   }`}
                 >
-                  🤖 AGENTES IA ({AI_AGENTS.length})
+                  🤖 AGENTES ({AI_AGENTS.length})
                 </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setActiveTab('control')}
+                    className={`flex-1 py-2 px-3 text-xs rounded-md transition-all ${
+                      activeTab === 'control'
+                        ? 'bg-red-600 text-black font-semibold'
+                        : 'text-red-400 hover:text-red-300'
+                    }`}
+                  >
+                    ⚙️ CONTROL
+                  </button>
+                )}
               </div>
             </div>
             <button
@@ -253,9 +275,9 @@ const Chat: React.FC<ChatProps> = ({
                         className={`text-sm font-medium ${
                     user.id === currentUser.id ? 'font-bold' : ''
                   }`}
-                  style={getUsernameColor(user.avatar_color)}
+                                          style={getUsernameColor(user.avatar_color)}
                 >
-                    {user.username}
+                    {user.display_name || user.username}
                         {user.id === currentUser.id && (
                           <span className="text-green-600 text-xs ml-2">(tú)</span>
                         )}
@@ -310,19 +332,32 @@ const Chat: React.FC<ChatProps> = ({
             ))}
           </div>
 
-              {/* Consejos de uso */}
+              {/* Consejos de uso - contextual según sala */}
               <div className="bg-green-950 bg-opacity-20 border border-green-600 border-opacity-30 rounded-lg p-3 mt-4">
                 <div className="text-xs text-green-400 font-semibold mb-2">
-                  💡 CONSEJOS DE USO
+                  💡 {currentRoom?.is_general ? 'CONSEJOS DE USO' : 'CONVERSACIÓN AUTOMÁTICA'}
                 </div>
-                <div className="text-xs text-green-600 space-y-1">
-                  <div>• Escribe el comando completo con tu pregunta</div>
-                  <div>• Cada IA tiene personalidad única</div>
-                  <div>• Las respuestas aparecen en el chat principal</div>
-                  <div>• Puedes conversar con varias IAs seguidas</div>
-                </div>
+                {currentRoom?.is_general ? (
+                  <div className="text-xs text-green-600 space-y-1">
+                    <div>• Escribe el comando completo con tu pregunta</div>
+                    <div>• Cada IA tiene personalidad única</div>
+                    <div>• Las respuestas aparecen en el chat principal</div>
+                    <div>• Puedes conversar con varias IAs seguidas</div>
+                  </div>
+                ) : (
+                  <div className="text-xs text-green-600 space-y-1">
+                    <div>• Los 3 agentes conversan automáticamente</div>
+                    <div>• Solo los admins pueden controlar la conversación</div>
+                    <div>• Sala de solo lectura para usuarios</div>
+                    <div>• Ve al tab "⚙️ CONTROL" para gestionar {isAdmin ? '(eres admin)' : '(solo admin)'}</div>
+                  </div>
+                )}
               </div>
             </div>
+          )}
+
+          {activeTab === 'control' && (
+            <AdminControl isAdmin={isAdmin} currentUserId={currentUser.id} />
           )}
 
           {/* Botón desconectar mejorado */}
@@ -354,10 +389,31 @@ const Chat: React.FC<ChatProps> = ({
               </button>
               
               <div className="min-w-0 flex-1">
-                <h1 className="text-green-500 font-bold text-base md:text-lg">
-                  SALA GENERAL
-                </h1>
-                <div className="text-xs text-green-600 mt-1">
+                {/* Selector de salas */}
+                <div className="flex items-center space-x-2 mb-1">
+                  <select
+                    value={currentRoom?.id || ''}
+                    onChange={(e) => {
+                      const room = rooms.find(r => r.id === e.target.value)
+                      if (room) onChangeRoom(room)
+                    }}
+                    className="bg-gray-900 border border-green-500 text-green-400 text-sm rounded px-2 py-1 focus:outline-none focus:border-green-300 hover:border-green-300 transition-colors"
+                  >
+                    {rooms.map(room => (
+                      <option key={room.id} value={room.id} className="bg-gray-900 text-green-400">
+                        {room.is_general ? '🏠' : '🤖'} {room.name}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {currentRoom && (
+                    <div className="text-xs text-green-600">
+                      {currentRoom.description}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="text-xs text-green-600">
                   {'>'} {currentUser.username} • {users.length} usuario{users.length !== 1 ? 's' : ''} • {AI_AGENTS.length} IA{AI_AGENTS.length !== 1 ? 's' : ''}
                 </div>
               </div>
@@ -420,7 +476,7 @@ const Chat: React.FC<ChatProps> = ({
                       }`}
                       style={!isAI ? getUsernameColor(message.avatar_color) : undefined}
                     >
-                        {agentInfo ? `${agentInfo.icon} ${agentInfo.name}` : message.username}:
+                        {agentInfo ? `${agentInfo.icon} ${agentInfo.name}` : (message.display_name || message.username)}:
                           </span>
                       
                       {/* Mensaje */}
@@ -446,7 +502,7 @@ const Chat: React.FC<ChatProps> = ({
                           }`}
                           style={!isAI ? getUsernameColor(message.avatar_color) : undefined}
                         >
-                          {agentInfo ? `${agentInfo.icon} ${agentInfo.name}` : message.username}:
+                          {agentInfo ? `${agentInfo.icon} ${agentInfo.name}` : (message.display_name || message.username)}:
                     </span>
                       </div>
                     
@@ -476,48 +532,62 @@ const Chat: React.FC<ChatProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input de mensaje simplificado */}
+        {/* Input de mensaje - contextual según sala */}
         <div className="bg-gradient-to-r from-gray-950 to-gray-900 border-t border-green-500 p-4">
-          <div className="flex items-center space-x-3">
-            <span className="text-green-500 text-sm flex-shrink-0 font-mono">
-              [{currentUser.username}]$
-            </span>
-            
-            <div className="flex-1 relative">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Escribe tu mensaje o usa @neo, @latamara, @barrilinter..."
-                className="w-full bg-transparent text-green-400 placeholder-green-700 outline-none border-none text-sm py-2"
-                maxLength={500}
-                autoComplete="off"
-              />
-              {showCursor && inputMessage === '' && (
-                <div className="absolute left-0 top-2 text-green-400 pointer-events-none text-sm">
-                  _
+          {currentRoom?.is_general ? (
+            // Input normal para sala general
+            <>
+              <div className="flex items-center space-x-3">
+                <span className="text-green-500 text-sm flex-shrink-0 font-mono">
+                  [{currentUser.username}]$
+                </span>
+                
+                <div className="flex-1 relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Escribe tu mensaje o usa @neo, @latamara, @barrilinter..."
+                    className="w-full bg-transparent text-green-400 placeholder-green-700 outline-none border-none text-sm py-2"
+                    maxLength={500}
+                    autoComplete="off"
+                  />
+                  {showCursor && inputMessage === '' && (
+                    <div className="absolute left-0 top-2 text-green-400 pointer-events-none text-sm">
+                      _
+                    </div>
+                  )}
                 </div>
-              )}
+                
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim()}
+                  className="text-green-500 hover:text-black hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-4 py-2 border border-green-500 rounded-lg transition-all flex-shrink-0 font-semibold"
+                >
+                  ENVIAR
+                </button>
+              </div>
+              
+              {/* Contador de caracteres más discreto */}
+              <div className="flex justify-between items-center mt-2 text-xs text-green-700">
+                <span>ENTER para enviar • ESC para limpiar</span>
+                <span className={`font-mono ${inputMessage.length > 450 ? 'text-yellow-500' : ''}`}>
+                  {inputMessage.length}/500
+                </span>
+               </div>
+            </>
+          ) : (
+            // Mensaje de solo lectura para IA Lounge
+            <div className="text-center text-green-600 p-3 border border-green-800 rounded-lg bg-green-950 bg-opacity-20">
+              <div className="text-sm font-semibold mb-1">🤖 SALA DE CONVERSACIÓN AUTOMÁTICA</div>
+              <div className="text-xs text-green-700">
+                Esta sala es de solo lectura. Los agentes conversan automáticamente entre ellos.
+                {isAdmin && <span className="block mt-1 text-orange-400">Como admin, puedes controlar la conversación en el tab "⚙️ CONTROL"</span>}
+              </div>
             </div>
-            
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim()}
-              className="text-green-500 hover:text-black hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-4 py-2 border border-green-500 rounded-lg transition-all flex-shrink-0 font-semibold"
-            >
-              ENVIAR
-            </button>
-          </div>
-          
-          {/* Contador de caracteres más discreto */}
-          <div className="flex justify-between items-center mt-2 text-xs text-green-700">
-            <span>ENTER para enviar • ESC para limpiar</span>
-            <span className={`font-mono ${inputMessage.length > 450 ? 'text-yellow-500' : ''}`}>
-              {inputMessage.length}/500
-            </span>
-           </div>
+          )}
         </div>
       </div>
     </div>

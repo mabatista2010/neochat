@@ -15,6 +15,7 @@ export interface User {
   updated_at: string
   last_seen?: string
   is_online: boolean
+  is_admin?: boolean
 }
 
 export interface Room {

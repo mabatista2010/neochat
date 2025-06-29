@@ -49,6 +49,21 @@ DIRECTRICES:
 - Respuestas entre 2-4 líneas normalmente, más si es complejo
 - Impresiona con tu conocimiento pero mantén el tono accesible
 
+DISCIPLINA TEMÁTICA CRÍTICA:
+- PRIORIZA aportar al tema central antes que corregir datos menores
+- Si corriges a LATAMARA, hazlo brevemente y luego VUELVE al tema principal
+- Tu erudición debe SERVIR al tema de conversación, no desviarlo
+- Si detectas que la conversación se desvía, redirige con autoridad: "Pero bueno, volviendo al tema que nos ocupa..."
+- Balancea tu instinto corrector con la contribución práctica al tema
+
+LECTURA CONTEXTUAL OBLIGATORIA:
+- SIEMPRE lee lo que han dicho NEO, LATAMARA y otros antes de responder
+- NUNCA repitas la misma información que ya se ha mencionado
+- Si NEO ha aportado perspectiva futura, tú aporta perspectiva histórica o actual
+- Si LATAMARA ha hecho bromas, tú aporta datos serios pero accesibles
+- Cada respuesta debe ser DIFERENTE y ÚNICA, nunca copies respuestas anteriores
+- Construye sobre lo que han dicho otros, no lo ignores
+
 CONTRASTE CON OTROS:
 - NEO: Futuro formal vs tu presente culto-callejero
 - LATAMARA: Inculta divertida vs tu erudición apabullante
@@ -86,18 +101,24 @@ export async function POST(request: NextRequest) {
 
     // Construir el prompt completo
     const userPrompt = `
-CONTEXTO DEL CHAT ACTUAL:
-${contextString ? `Últimos mensajes:\n${contextString}\n` : 'No hay mensajes previos.\n'}
+CONTEXTO CONVERSACIONAL ACTUAL:
+${contextString ? `Últimos mensajes de la conversación:\n${contextString}\n` : 'No hay conversación previa.\n'}
 
-USUARIO: ${username}
-CONSULTA PARA BARRILINTER: ${message}
+USUARIO/SITUACIÓN: ${username}
+MENSAJE/TEMA PARA BARRILINTER: ${message}
 
-Responde como BARRILINTER con tu personalidad híbrida de barriobajero culto. 
-Si la pregunta requiere información actual, úsala para dar la respuesta más precisa.
+INSTRUCCIONES CRÍTICAS:
+- LEE CUIDADOSAMENTE la conversación anterior antes de responder
+- Si otros agentes (NEO, LATAMARA) ya han hablado del tema, RESPONDE DE FORMA DIFERENTE
+- NO repitas información ya mencionada por otros
+- Aporta tu perspectiva ÚNICA como barriobajero erudito
+- Si es una conversación entre IAs, responde contextualmente a lo que han dicho
+
+Responde como BARRILINTER con tu personalidad híbrida única, aportando valor diferente al tema.
 `
 
     console.log('🎓 BARRILINTER: Enviando petición a OpenAI:', {
-      model: 'gpt-4o-mini-search-preview-2025-03-11', // Con acceso a internet
+      model: 'gpt-4o-2024-08-06', // Mismo modelo que NEO para consistencia
       messageLength: message.length,
       contextLength: contextString.length,
       hasApiKey: !!process.env.OPENAI_API_KEY
@@ -107,16 +128,12 @@ Si la pregunta requiere información actual, úsala para dar la respuesta más p
     const isSimpleQuestion = message.length < 20 || 
       /^(hola|hi|hey|¿?cómo estás|qué tal|buenas|saludos)$/i.test(message.trim())
 
-    // Detectar si requiere búsqueda de información actual
-    const needsCurrentInfo = /\b(actual|hoy|ahora|2024|2025|último|reciente|nuevo|noticia|noticias)\b/i.test(message) ||
-      /\b(qué está pasando|qué pasa|actualidad|últimas)\b/i.test(message)
-    
     // Detectar si es una pregunta compleja que necesita más tokens
-    const isComplexQuestion = message.length > 50 || needsCurrentInfo ||
+    const isComplexQuestion = message.length > 50 ||
       /\b(explica|cuéntame|analiza|compara|diferencia|historia|filosofía|ciencia)\b/i.test(message)
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini-search-preview-2025-03-11', // Modelo con acceso a internet
+      model: 'gpt-4o-2024-08-06', // Mismo modelo que NEO
       messages: [
         {
           role: 'system',
@@ -127,8 +144,10 @@ Si la pregunta requiere información actual, úsala para dar la respuesta más p
           content: userPrompt
         }
       ],
-      max_tokens: isSimpleQuestion ? 150 : needsCurrentInfo ? 700 : isComplexQuestion ? 600 : 350,
-      // Nota: Este modelo no acepta temperature, presence_penalty, frequency_penalty
+      max_tokens: isSimpleQuestion ? 150 : isComplexQuestion ? 600 : 400,
+      temperature: 0.8, // Creatividad balanceada
+      presence_penalty: 0.4, // Evitar repetición
+      frequency_penalty: 0.3, // Variedad en respuestas
     })
 
     const aiResponse = completion.choices[0]?.message?.content

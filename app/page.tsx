@@ -11,13 +11,17 @@ export default function Home() {
   const {
     messages,
     users,
+    rooms,
+    currentRoom,
     currentUser,
     loading,
     error,
     onlineNotification,
+    isAdmin,
     createOrGetUser,
     sendMessage,
-    setCurrentUser
+    setCurrentUser,
+    changeRoom
   } = useChat()
 
   const handleLogin = async (username: string) => {
@@ -81,10 +85,14 @@ export default function Home() {
     <Chat
       messages={messages}
       users={users}
+      rooms={rooms}
+      currentRoom={currentRoom}
       currentUser={currentUser}
       onSendMessage={sendMessage}
       onLogout={handleLogout}
+      onChangeRoom={changeRoom}
       onlineNotification={onlineNotification}
+      isAdmin={isAdmin}
     />
   )
 }

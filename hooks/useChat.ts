@@ -2,16 +2,56 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase, MessageWithUser, User } from '@/lib/supabase'
 import { USER_ACTIVITY_CONFIG, SYSTEM_MESSAGES } from '@/lib/constants'
 
+// Tipos para salas
+export interface Room {
+  id: string
+  name: string
+  description: string | null
+  is_general: boolean
+}
+
 export const useChat = () => {
   const [messages, setMessages] = useState<MessageWithUser[]>([])
+  const [allMessages, setAllMessages] = useState<MessageWithUser[]>([]) // Todos los mensajes
   const [users, setUsers] = useState<User[]>([])
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [currentRoom, setCurrentRoom] = useState<Room | null>(null)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [onlineNotification, setOnlineNotification] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
 
-  // Obtener mensajes iniciales
-  const fetchMessages = useCallback(async () => {
+  // Obtener salas disponibles
+  const fetchRooms = useCallback(async () => {
+    try {
+      console.log('🏗️ Cargando salas disponibles...')
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .order('is_general', { ascending: false }) // Sala general primero
+
+      if (error) {
+        console.error('Error fetching rooms:', error)
+        return
+      }
+      
+      console.log('🏠 Salas obtenidas:', data?.map(r => ({ name: r.name, id: r.id, is_general: r.is_general })))
+      setRooms(data || [])
+      
+      // Establecer sala inicial si no hay una seleccionada
+      if (data && data.length > 0 && !currentRoom) {
+        const generalRoom = data.find(room => room.is_general) || data[0]
+        console.log('🎯 Estableciendo sala inicial:', generalRoom.name)
+        setCurrentRoom(generalRoom)
+      }
+    } catch (err) {
+      console.error('Error fetching rooms:', err)
+    }
+  }, [currentRoom])
+
+  // Obtener todos los mensajes
+  const fetchAllMessages = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('messages_with_user')
@@ -23,14 +63,48 @@ export const useChat = () => {
         throw error
       }
       
-      console.log('Messages fetched successfully:', data?.length || 0)
-      setMessages(data || [])
-      setError(null) // Limpiar errores previos
+      console.log('Todos los mensajes obtenidos:', data?.length || 0)
+      setAllMessages(data || [])
+      setError(null)
     } catch (err) {
       console.error('Error fetching messages:', err)
       setError('Error al cargar mensajes. Verifica tu conexión.')
     }
   }, [])
+
+  // Filtrar mensajes por sala actual
+  useEffect(() => {
+    console.log('🔍 Filtro de mensajes ejecutándose:', {
+      currentRoom: currentRoom?.name,
+      totalMessages: allMessages.length,
+      currentRoomId: currentRoom?.id
+    })
+    
+    if (currentRoom) {
+      const roomMessages = allMessages.filter(message => message.room_name === currentRoom.name)
+      console.log(`📨 Mensajes filtrados para "${currentRoom.name}":`, {
+        total: roomMessages.length,
+        mensajes: roomMessages.map(m => ({ 
+          id: m.id.slice(0, 8), 
+          user: m.username, 
+          preview: m.content.slice(0, 50) 
+        }))
+      })
+      setMessages(roomMessages)
+    } else {
+      console.log('⚠️ No hay sala actual, mostrando todos los mensajes')
+      setMessages(allMessages)
+    }
+  }, [currentRoom, allMessages])
+
+  // Cambiar sala
+  const changeRoom = useCallback((room: Room) => {
+    console.log(`🏠 Cambiando a sala: "${room.name}" (ID: ${room.id})`)
+    setCurrentRoom(room)
+  }, [])
+
+  // Obtener mensajes iniciales (renombrado para claridad)
+  const fetchMessages = fetchAllMessages
 
   // Limpiar usuarios inactivos (función auxiliar)
   const cleanupInactiveUsers = useCallback(async () => {
@@ -157,6 +231,9 @@ export const useChat = () => {
           // Aunque falle la actualización, devolvemos el usuario existente
         }
 
+        // Verificar si el usuario es administrador
+        setIsAdmin(existingUser.is_admin || false)
+        
         // Devolver el usuario existente con los datos actualizados
         return {
           ...existingUser,
@@ -184,6 +261,9 @@ export const useChat = () => {
         console.error('Error creating user:', createError)
         throw createError
       }
+      
+      // Verificar si el nuevo usuario es administrador
+      setIsAdmin(newUser.is_admin || false)
       
       return newUser
     } catch (err) {
@@ -484,65 +564,59 @@ export const useChat = () => {
 
   // Enviar mensaje
   const sendMessage = useCallback(async (content: string) => {
-    if (!currentUser || !content.trim()) return
+    if (!currentUser || !currentRoom || !content.trim()) return
 
     try {
-      // Obtener ID de sala general
-      const { data: room, error: roomError } = await supabase
-        .from('rooms')
-        .select('id')
-        .eq('is_general', true)
-        .single()
-
-      if (roomError) throw roomError
-
-      // Insertar mensaje del usuario
+      // Insertar mensaje del usuario en la sala actual
       const { error } = await supabase
         .from('messages')
         .insert({
           content: content.trim(),
           user_id: currentUser.id,
-          room_id: room.id,
+          room_id: currentRoom.id,
           message_type: 'user'
         })
 
       if (error) throw error
 
-      // Verificar si el mensaje invoca a alguna IA
-      const trimmedContent = content.trim().toLowerCase()
-      
-      if (trimmedContent.startsWith('@neo ')) {
-        const neoMessage = content.trim().substring(5) // Remover "@neo "
+      // Solo procesar comandos de IA en la sala general
+      if (currentRoom.is_general) {
+        // Verificar si el mensaje invoca a alguna IA
+        const trimmedContent = content.trim().toLowerCase()
         
-        if (neoMessage.length > 0) {
-          console.log('Mensaje para NEO detectado:', neoMessage)
+        if (trimmedContent.startsWith('@neo ')) {
+          const neoMessage = content.trim().substring(5) // Remover "@neo "
           
-          // Pequeño delay para que el mensaje del usuario aparezca primero
-          setTimeout(() => {
-            invokeNEO(neoMessage, room.id)
-          }, 500)
-        }
-      } else if (trimmedContent.startsWith('@latamara ')) {
-        const latamaraMessage = content.trim().substring(10) // Remover "@latamara "
-        
-        if (latamaraMessage.length > 0) {
-          console.log('Mensaje para LATAMARA detectado:', latamaraMessage)
+          if (neoMessage.length > 0) {
+            console.log('Mensaje para NEO detectado:', neoMessage)
+            
+            // Pequeño delay para que el mensaje del usuario aparezca primero
+            setTimeout(() => {
+              invokeNEO(neoMessage, currentRoom.id)
+            }, 500)
+          }
+        } else if (trimmedContent.startsWith('@latamara ')) {
+          const latamaraMessage = content.trim().substring(10) // Remover "@latamara "
           
-          // Pequeño delay para que el mensaje del usuario aparezca primero
-          setTimeout(() => {
-            invokeLatamara(latamaraMessage, room.id)
-          }, 800) // Un poco más de delay para diferenciarlo de NEO
-        }
-      } else if (trimmedContent.startsWith('@barrilinter ')) {
-        const barrilinterMessage = content.trim().substring(13) // Remover "@barrilinter "
-        
-        if (barrilinterMessage.length > 0) {
-          console.log('Mensaje para BARRILINTER detectado:', barrilinterMessage)
+          if (latamaraMessage.length > 0) {
+            console.log('Mensaje para LATAMARA detectado:', latamaraMessage)
+            
+            // Pequeño delay para que el mensaje del usuario aparezca primero
+            setTimeout(() => {
+              invokeLatamara(latamaraMessage, currentRoom.id)
+            }, 800) // Un poco más de delay para diferenciarlo de NEO
+          }
+        } else if (trimmedContent.startsWith('@barrilinter ')) {
+          const barrilinterMessage = content.trim().substring(13) // Remover "@barrilinter "
           
-          // Delay diferente para cada IA
-          setTimeout(() => {
-            invokeBarrilinter(barrilinterMessage, room.id)
-          }, 1000) // Mayor delay para diferenciarlo
+          if (barrilinterMessage.length > 0) {
+            console.log('Mensaje para BARRILINTER detectado:', barrilinterMessage)
+            
+            // Delay diferente para cada IA
+            setTimeout(() => {
+              invokeBarrilinter(barrilinterMessage, currentRoom.id)
+            }, 1000) // Mayor delay para diferenciarlo
+          }
         }
       }
       
@@ -550,7 +624,7 @@ export const useChat = () => {
       console.error('Error sending message:', err)
       setError('Error al enviar mensaje')
     }
-  }, [currentUser, invokeNEO, invokeLatamara, invokeBarrilinter])
+  }, [currentUser, currentRoom, invokeNEO, invokeLatamara, invokeBarrilinter])
 
   // Configurar subscripciones en tiempo real
   useEffect(() => {
@@ -597,13 +671,14 @@ export const useChat = () => {
   // Inicializar datos
   useEffect(() => {
     const initializeChat = async () => {
+      await fetchRooms() // Cargar salas primero
       await fetchMessages()
       await fetchUsers()
       setLoading(false)
     }
 
     initializeChat()
-  }, [fetchMessages, fetchUsers])
+  }, [fetchRooms, fetchMessages, fetchUsers])
 
   // Sistema de actividad optimizado con throttling
   useEffect(() => {
@@ -764,13 +839,17 @@ export const useChat = () => {
   return {
     messages,
     users,
+    rooms,
+    currentRoom,
     currentUser,
     loading,
     error,
     onlineNotification,
+    isAdmin,
     createOrGetUser,
     sendMessage,
     setCurrentUser,
-    cleanupInactiveUsers
+    cleanupInactiveUsers,
+    changeRoom
   }
 } 
