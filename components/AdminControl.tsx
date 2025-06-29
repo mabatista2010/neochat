@@ -107,7 +107,21 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
           console.log('✅ Mensaje generado:', data.speaker)
         }
       } else {
-        const errorData = await response.json()
+        // Leer respuesta como texto primero
+        const responseText = await response.text()
+        let errorData;
+        
+        try {
+          // Intentar parsear como JSON
+          errorData = JSON.parse(responseText)
+        } catch (jsonError) {
+          // Si no es JSON válido, crear objeto de error con el texto
+          errorData = { 
+            error: `Error ${response.status}`, 
+            details: responseText.slice(0, 200) + (responseText.length > 200 ? '...' : '') 
+          }
+        }
+        
         console.error('❌ Error generando mensaje:', errorData)
       }
     } catch (error) {

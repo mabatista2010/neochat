@@ -250,8 +250,12 @@ INSTRUCCIONES PRIORITARIAS:
 - Respuesta entre 50-200 palabras, SIEMPRE relacionada con el tema central`;
     }
     
+    // Construir URL base desde el request actual para que funcione en producción
+    const url = new URL(request.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
+    
     // Llamar a la IA correspondiente con conversación contextual
-    const aiResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${nextSpeaker.apiEndpoint}`, {
+    const aiResponse = await fetch(`${baseUrl}${nextSpeaker.apiEndpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -263,7 +267,8 @@ INSTRUCCIONES PRIORITARIAS:
     });
     
     if (!aiResponse.ok) {
-      throw new Error(`Error llamando a ${nextSpeaker.name}`);
+      const errorText = await aiResponse.text();
+      throw new Error(`Error llamando a ${nextSpeaker.name}: ${aiResponse.status} - ${errorText}`);
     }
     
     const aiData = await aiResponse.json();
@@ -318,7 +323,7 @@ INSTRUCCIONES PRIORITARIAS:
   } catch (error) {
     console.error('Error en conversación IA:', error);
     return NextResponse.json(
-      { error: 'Error en motor de conversación IA' },
+      { error: 'Error en motor de conversación IA', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
   }
