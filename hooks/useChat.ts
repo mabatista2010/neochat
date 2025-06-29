@@ -140,6 +140,27 @@ export const useChat = () => {
     }
   }, [])
 
+  // Función para obtener ID de usuario LATAMARA
+  const getLatamaraUserId = useCallback(async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', 'LATAMARA')
+        .single()
+
+      if (error || !data) {
+        console.error('Error getting LATAMARA user ID:', error)
+        return null
+      }
+
+      return data.id
+    } catch (err) {
+      console.error('Error in getLatamaraUserId:', err)
+      return null
+    }
+  }, [])
+
   // Función para invocar a NEO
   const invokeNEO = useCallback(async (userMessage: string, roomId: string) => {
     try {
@@ -209,6 +230,75 @@ export const useChat = () => {
     }
   }, [currentUser, messages, getNeoUserId])
 
+  // Función para invocar a LATAMARA
+  const invokeLatamara = useCallback(async (userMessage: string, roomId: string) => {
+    try {
+      console.log('Invocando a LATAMARA con:', userMessage)
+      
+      const response = await fetch('/api/latamara', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          chatContext: messages,
+          username: currentUser?.username || 'Anónimo'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al comunicarse con LATAMARA')
+      }
+
+      // Obtener ID de usuario LATAMARA
+      const latamaraUserId = await getLatamaraUserId()
+      
+      if (!latamaraUserId) {
+        throw new Error('No se pudo obtener el ID de usuario LATAMARA')
+      }
+
+      // Insertar respuesta de LATAMARA en la base de datos
+      const { error: latamaraError } = await supabase
+        .from('messages')
+        .insert({
+          content: data.message,
+          user_id: latamaraUserId,
+          room_id: roomId,
+          message_type: 'ai'
+        })
+
+      if (latamaraError) {
+        console.error('Error inserting LATAMARA message:', latamaraError)
+        throw latamaraError
+      }
+
+      console.log('LATAMARA respondió exitosamente')
+    } catch (err) {
+      console.error('Error invoking LATAMARA:', err)
+      setError('Error al invocar a LATAMARA. Verifica tu conexión.')
+      
+      // Intentar insertar mensaje de error
+      try {
+        const latamaraUserId = await getLatamaraUserId()
+        if (latamaraUserId) {
+          await supabase
+            .from('messages')
+            .insert({
+              content: 'Joder tío, que se me ha petao el móvil y no puedo contestar, ¿me escribes otra vez?',
+              user_id: latamaraUserId,
+              room_id: roomId,
+              message_type: 'ai'
+            })
+        }
+      } catch (errorInsertError) {
+        console.error('Error inserting error message:', errorInsertError)
+      }
+    }
+  }, [currentUser, messages, getLatamaraUserId])
+
   // Enviar mensaje
   const sendMessage = useCallback(async (content: string) => {
     if (!currentUser || !content.trim()) return
@@ -235,8 +325,9 @@ export const useChat = () => {
 
       if (error) throw error
 
-      // Verificar si el mensaje invoca a NEO
+      // Verificar si el mensaje invoca a alguna IA
       const trimmedContent = content.trim().toLowerCase()
+      
       if (trimmedContent.startsWith('@neo ')) {
         const neoMessage = content.trim().substring(5) // Remover "@neo "
         
@@ -248,13 +339,24 @@ export const useChat = () => {
             invokeNEO(neoMessage, room.id)
           }, 500)
         }
+      } else if (trimmedContent.startsWith('@latamara ')) {
+        const latamaraMessage = content.trim().substring(10) // Remover "@latamara "
+        
+        if (latamaraMessage.length > 0) {
+          console.log('Mensaje para LATAMARA detectado:', latamaraMessage)
+          
+          // Pequeño delay para que el mensaje del usuario aparezca primero
+          setTimeout(() => {
+            invokeLatamara(latamaraMessage, room.id)
+          }, 800) // Un poco más de delay para diferenciarlo de NEO
+        }
       }
       
     } catch (err) {
       console.error('Error sending message:', err)
       setError('Error al enviar mensaje')
     }
-  }, [currentUser, invokeNEO])
+  }, [currentUser, invokeNEO, invokeLatamara])
 
   // Configurar subscripciones en tiempo real
   useEffect(() => {

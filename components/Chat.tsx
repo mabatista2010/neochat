@@ -206,7 +206,7 @@ const Chat: React.FC<ChatProps> = ({
             
                          {/* Info IA - oculta en móvil pequeño */}
              <div className="hidden sm:block text-xs text-green-600 flex-shrink-0">
-               {'>'} IA: Escribe @neo [mensaje] para invocar a NEO
+               {'>'} IA: @neo (futuro) | @latamara (barrio)
              </div>
           </div>
         </div>
@@ -219,57 +219,73 @@ const Chat: React.FC<ChatProps> = ({
               <div className="text-xs md:text-sm mt-2">Sé el primero en escribir algo...</div>
             </div>
           ) : (
-            messages.map((message) => (
-              <div key={message.id} className={`group ${message.message_type === 'ai' ? 'ai-message' : ''}`}>
-                <div className={`flex items-start space-x-2 md:space-x-3 ${
-                  message.message_type === 'ai' 
-                    ? 'bg-cyan-950 bg-opacity-20 p-2 rounded border-l-2 border-cyan-400' 
-                    : ''
-                }`}>
-                  {/* Timestamp - más pequeño en móvil */}
-                  <span className="text-xs text-green-600 min-w-[45px] md:min-w-[50px] flex-shrink-0">
-                    [{formatTimestamp(message.created_at)}]
-                  </span>
-                  
-                  {/* Username - adaptativo con indicador de IA */}
-                  <span 
-                    className={`font-semibold text-sm md:text-base min-w-[80px] md:min-w-[100px] flex-shrink-0 ${
-                      message.message_type === 'ai' ? 'text-cyan-400' : ''
-                    }`}
-                    style={message.message_type !== 'ai' ? getUsernameColor(message.avatar_color) : undefined}
-                  >
-                    {message.message_type === 'ai' ? '🤖 NEO' : (
-                      <>
-                        {/* Versión móvil truncada */}
-                        <span className="md:hidden">
-                          {truncateUsernameForMobile(message.username)}
-                        </span>
-                        {/* Versión desktop completa */}
-                        <span className="hidden md:inline">
-                          {message.username}
-                        </span>
-                      </>
-                    )}:
-                  </span>
-                  
-                  {/* Mensaje con estilo diferente para IA */}
-                  <span className={`flex-1 break-words text-sm md:text-base ${
-                    message.message_type === 'ai' 
-                      ? 'text-cyan-300 italic' 
-                      : 'text-green-400'
+            messages.map((message) => {
+              // Determinar qué IA es basándose en el username
+              const isNeo = message.message_type === 'ai' && message.username === 'NEO'
+              const isLatamara = message.message_type === 'ai' && message.username === 'LATAMARA'
+              const isAI = isNeo || isLatamara
+              
+              return (
+                <div key={message.id} className={`group ${isAI ? 'ai-message' : ''}`}>
+                  <div className={`flex items-start space-x-2 md:space-x-3 ${
+                    isNeo 
+                      ? 'bg-cyan-950 bg-opacity-20 p-2 rounded border-l-2 border-cyan-400'
+                      : isLatamara
+                      ? 'bg-pink-950 bg-opacity-20 p-2 rounded border-l-2 border-pink-400'
+                      : ''
                   }`}>
-                    {message.content}
-                  </span>
-                </div>
-                
-                {/* Indicador adicional para mensajes de IA */}
-                {message.message_type === 'ai' && (
-                  <div className="text-xs text-cyan-600 mt-1 ml-16 md:ml-20">
-                    {'>'} Respuesta desde el año 2157
+                    {/* Timestamp - más pequeño en móvil */}
+                    <span className="text-xs text-green-600 min-w-[45px] md:min-w-[50px] flex-shrink-0">
+                      [{formatTimestamp(message.created_at)}]
+                    </span>
+                    
+                    {/* Username - adaptativo con indicador de IA */}
+                    <span 
+                      className={`font-semibold text-sm md:text-base min-w-[80px] md:min-w-[100px] flex-shrink-0 ${
+                        isNeo ? 'text-cyan-400' : isLatamara ? 'text-pink-400' : ''
+                      }`}
+                      style={!isAI ? getUsernameColor(message.avatar_color) : undefined}
+                    >
+                      {isNeo ? '🤖 NEO' : isLatamara ? '👱‍♀️ LATAMARA' : (
+                        <>
+                          {/* Versión móvil truncada */}
+                          <span className="md:hidden">
+                            {truncateUsernameForMobile(message.username)}
+                          </span>
+                          {/* Versión desktop completa */}
+                          <span className="hidden md:inline">
+                            {message.username}
+                          </span>
+                        </>
+                      )}:
+                    </span>
+                    
+                    {/* Mensaje con estilo diferente para cada IA */}
+                    <span className={`flex-1 break-words text-sm md:text-base ${
+                      isNeo 
+                        ? 'text-cyan-300 italic' 
+                        : isLatamara
+                        ? 'text-pink-300 font-normal'
+                        : 'text-green-400'
+                    }`}>
+                      {message.content}
+                    </span>
                   </div>
-                )}
-              </div>
-            ))
+                  
+                  {/* Indicadores adicionales para mensajes de IA */}
+                  {isNeo && (
+                    <div className="text-xs text-cyan-600 mt-1 ml-16 md:ml-20">
+                      {'>'} Respuesta desde el año 2157
+                    </div>
+                  )}
+                  {isLatamara && (
+                    <div className="text-xs text-pink-600 mt-1 ml-16 md:ml-20">
+                      {'>'} Respuesta desde el barrio de Vallecas
+                    </div>
+                  )}
+                </div>
+              )
+            })
           )}
           <div ref={messagesEndRef} />
         </div>
@@ -325,7 +341,10 @@ const Chat: React.FC<ChatProps> = ({
                <span className="text-right">{inputMessage.length}/500</span>
              </div>
              <div className="text-cyan-600">
-               {'>'} Escribe &quot;@neo [tu mensaje]&quot; para invocar a la IA del futuro
+               {'>'} Escribe &quot;@neo [mensaje]&quot; para la IA del futuro
+             </div>
+             <div className="text-pink-600">
+               {'>'} Escribe &quot;@latamara [mensaje]&quot; para la choni del barrio
              </div>
            </div>
         </div>
