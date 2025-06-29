@@ -65,7 +65,23 @@ const Chat: React.FC<ChatProps> = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'users' | 'agents'>('users')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Scroll automático SOLO si estás al final del todo
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container) return
+
+    // Verificar si está al final (con muy poca tolerancia)
+    const { scrollTop, scrollHeight, clientHeight } = container
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Solo 10px de tolerancia
+
+    // Solo hacer scroll si está realmente al final
+    if (isAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages])
 
   // Cursor parpadeante
   useEffect(() => {
@@ -87,9 +103,15 @@ const Chat: React.FC<ChatProps> = ({
     if (inputMessage.trim()) {
       onSendMessage(inputMessage.trim())
       setInputMessage('')
+      
+      // Scroll al final cuando envías tu propio mensaje
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+      
       // En móvil, hacer focus después de enviar
       if (window.innerWidth < 768) {
-        setTimeout(() => inputRef.current?.focus(), 100)
+        setTimeout(() => inputRef.current?.focus(), 200)
       }
     }
   }
@@ -340,7 +362,10 @@ const Chat: React.FC<ChatProps> = ({
         )}
 
         {/* Área de mensajes */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3">
+        <div 
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3"
+        >
           {messages.length === 0 ? (
             <div className="text-center text-green-600 mt-8">
               <div className="text-lg">{'>'} CHAT VACÍO</div>
