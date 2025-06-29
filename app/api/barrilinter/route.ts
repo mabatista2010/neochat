@@ -117,12 +117,10 @@ INSTRUCCIONES CRÍTICAS:
 Responde como BARRILINTER con tu personalidad híbrida única, aportando valor diferente al tema.
 `
 
-    console.log('🎓 BARRILINTER: Enviando petición a OpenAI:', {
-      model: 'gpt-4o-2024-08-06', // Mismo modelo que NEO para consistencia
-      messageLength: message.length,
-      contextLength: contextString.length,
-      hasApiKey: !!process.env.OPENAI_API_KEY
-    })
+    // Solo log en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎓 BARRILINTER: Enviando petición a OpenAI')
+    }
 
     // Detectar si es una pregunta simple
     const isSimpleQuestion = message.length < 20 || 
@@ -159,10 +157,10 @@ Responde como BARRILINTER con tu personalidad híbrida única, aportando valor d
       )
     }
 
-    console.log('✅ BARRILINTER: Respuesta generada exitosamente:', {
-      length: aiResponse.length,
-      tokens: completion.usage?.total_tokens || 0
-    })
+    // Solo log en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ BARRILINTER: Respuesta generada')
+    }
 
     return NextResponse.json({
       message: aiResponse.trim(),

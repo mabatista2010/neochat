@@ -138,24 +138,58 @@ export async function POST(request: NextRequest) {
         break;
         
       case 'clear_chat':
-        // Limpiar mensajes de IA Lounge
-        const { error: clearError } = await supabase
+        // Verificar que tenemos la service role key
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          console.error('❌ SUPABASE_SERVICE_ROLE_KEY no configurada');
+          return NextResponse.json(
+            { error: 'Configuración del servidor incompleta' },
+            { status: 500 }
+          );
+        }
+
+        // Limpiar mensajes de IA Lounge usando service role para bypassear RLS
+        const { createClient } = await import('@supabase/supabase-js');
+        const serviceSupabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!, // Service role bypasea RLS
+          {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false
+            }
+          }
+        );
+        
+        console.log('🗑️ Intentando limpiar mensajes de IA Lounge...');
+        
+        // Primero contar cuántos mensajes hay
+        const { count: messageCount } = await serviceSupabase
           .from('messages')
-          .delete()
-          .eq('room_id', 'c31be55a-ba56-4737-b5fe-8c559ad0f4fd'); // ID específico de IA Lounge
+          .select('*', { count: 'exact', head: true })
+          .eq('room_id', 'c31be55a-ba56-4737-b5fe-8c559ad0f4fd');
+        
+        console.log(`📊 Mensajes encontrados para borrar: ${messageCount || 0}`);
+        
+        // Realizar el DELETE
+        const { error: clearError, count } = await serviceSupabase
+          .from('messages')
+          .delete({ count: 'exact' })
+          .eq('room_id', 'c31be55a-ba56-4737-b5fe-8c559ad0f4fd');
         
         if (clearError) {
-          console.error('Error limpiando chat:', clearError);
+          console.error('❌ Error limpiando chat:', clearError);
           return NextResponse.json(
-            { error: 'Error al limpiar chat' },
+            { error: `Error al limpiar chat: ${clearError.message}` },
             { status: 500 }
           );
         }
         
+        console.log(`✅ Chat limpiado exitosamente. Mensajes eliminados: ${count || 0}`);
+        
         return NextResponse.json({
           success: true,
           action: 'clear_chat',
-          message: 'Chat de IA Lounge limpiado exitosamente'
+          message: `Chat de IA Lounge limpiado exitosamente (${count || 0} mensajes eliminados)`
         });
         
       default:

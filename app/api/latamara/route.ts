@@ -98,11 +98,10 @@ MENSAJE PARA LATAMARA: ${message}
 Responde como LATAMARA con tu personalidad choni, mezclando datos históricos incorrectos si viene al caso.
 `
 
-    console.log('Enviando petición a OpenAI para LATAMARA:', {
-      model: 'gpt-4o-2024-08-06',
-      messageLength: message.length,
-      contextLength: contextString.length
-    })
+    // Solo log en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('👱‍♀️ LATAMARA: Enviando petición a OpenAI')
+    }
 
     // Detectar si es una pregunta simple
     const isSimpleQuestion = message.length < 15 || 
@@ -135,7 +134,10 @@ Responde como LATAMARA con tu personalidad choni, mezclando datos históricos in
       )
     }
 
-    console.log('Respuesta de LATAMARA generada exitosamente')
+    // Solo log en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ LATAMARA: Respuesta generada')
+    }
 
     return NextResponse.json({
       message: aiResponse.trim(),

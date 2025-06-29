@@ -72,8 +72,7 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
     if (!status) return
 
     const delay = getDelayFromSpeed(status.speed)
-    console.log(`⏰ Motor de conversación iniciado con delay de ${delay}ms`)
-
+    
     // Generar primer mensaje inmediatamente
     generateMessage()
 
@@ -88,14 +87,12 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
       clearInterval(conversationIntervalRef.current)
       conversationIntervalRef.current = null
       setAutoGeneration(false)
-      console.log('🛑 Motor de conversación detenido')
     }
   }
 
   const generateMessage = async () => {
     try {
       setAutoGeneration(true)
-      console.log('💬 Generando mensaje automático...')
       
       const response = await fetch('/api/ai-conversation', {
         method: 'POST',
@@ -105,7 +102,10 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
 
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Mensaje generado:', data.speaker, data.content?.slice(0, 50) + '...')
+        // Solo log en desarrollo
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Mensaje generado:', data.speaker)
+        }
       } else {
         const errorData = await response.json()
         console.error('❌ Error generando mensaje:', errorData)
@@ -119,18 +119,15 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
 
   const loadStatus = async () => {
     try {
-      console.log('📥 Cargando estado...');
       const response = await fetch('/api/admin/ai-control')
-      console.log('📊 GET Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Estado cargado:', data);
         setStatus(data.status)
         setTopics(data.topics || [])
       } else {
         const errorText = await response.text();
-        console.error('❌ Error en GET:', response.status, errorText);
+        console.error('❌ Error cargando estado:', response.status, errorText);
       }
     } catch (error) {
       console.error('💥 Error cargando estado:', error)
@@ -147,7 +144,6 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
     
     setActionLoading(true);
     const payload = { userId: currentUserId, action, ...extraData };
-    console.log('🚀 Enviando request:', payload);
     
     try {
       const response = await fetch('/api/admin/ai-control', {
@@ -156,18 +152,15 @@ const AdminControl: React.FC<AdminControlProps> = ({ isAdmin, currentUserId }) =
         body: JSON.stringify(payload)
       });
       
-      console.log('📥 Response status:', response.status);
-      
       if (response.ok) {
         const jsonData = await response.json();
-        console.log('✅ Success data:', jsonData);
         await loadStatus();
       } else {
         const errorData = await response.json();
-        console.error('❌ Response not OK:', response.status, errorData);
+        console.error('❌ Error ejecutando acción:', response.status, errorData);
       }
     } catch (error) {
-      console.error('💥 Fetch error:', error);
+      console.error('💥 Error en acción:', error);
     } finally {
       setActionLoading(false);
     }

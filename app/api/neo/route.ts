@@ -88,11 +88,10 @@ MENSAJE DIRIGIDO A NEO: ${message}
 Responde como NEO, teniendo en cuenta el contexto de la conversación si es relevante.
 `
 
-    console.log('Enviando petición a OpenAI:', {
-      model: 'gpt-4o-2024-08-06',
-      messageLength: message.length,
-      contextLength: contextString.length
-    })
+    // Solo log en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🤖 NEO: Enviando petición a OpenAI')
+    }
 
     // Detectar si es una pregunta simple para ajustar tokens
     const isSimpleQuestion = message.length < 20 || 
@@ -125,7 +124,10 @@ Responde como NEO, teniendo en cuenta el contexto de la conversación si es rele
       )
     }
 
-    console.log('Respuesta de NEO generada exitosamente')
+    // Solo log en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ NEO: Respuesta generada')
+    }
 
     return NextResponse.json({
       message: aiResponse.trim(),

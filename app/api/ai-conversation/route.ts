@@ -192,8 +192,6 @@ export async function POST(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(8);
     
-    console.log('📜 Mensajes recientes obtenidos:', recentMessages?.length || 0);
-    
     // Determinar siguiente speaker (simple rotación)
     let nextSpeaker = enabledAgents[0];
     if (currentStatus.last_speaker) {
@@ -202,8 +200,6 @@ export async function POST(request: NextRequest) {
         nextSpeaker = otherAgents[Math.floor(Math.random() * otherAgents.length)];
       }
     }
-    
-    console.log(`🎭 Siguiente speaker: ${nextSpeaker.name} (anterior: ${currentStatus.last_speaker || 'ninguno'})`);
     
     // Generar contexto conversacional con mensajes previos (orden cronológico)
     const messagesInOrder = recentMessages ? [...recentMessages].reverse() : [];
@@ -254,12 +250,6 @@ INSTRUCCIONES PRIORITARIAS:
 - Respuesta entre 50-200 palabras, SIEMPRE relacionada con el tema central`;
     }
     
-    console.log(`💬 Enviando a ${nextSpeaker.name}:`, {
-      messagePreview: messageForAI.slice(0, 100),
-      contextPreview: contextForAI.slice(0, 200),
-      conversationLength: messagesInOrder.length
-    });
-    
     // Llamar a la IA correspondiente con conversación contextual
     const aiResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${nextSpeaker.apiEndpoint}`, {
       method: 'POST',
@@ -291,7 +281,6 @@ INSTRUCCIONES PRIORITARIAS:
     
     // Enviar mensaje a la sala
     const messageContent = aiData.message || aiData.content;
-    console.log(`💬 Insertando mensaje de ${nextSpeaker.name}:`, messageContent?.slice(0, 100));
     
     const { data: message, error: insertError } = await supabase
       .from('messages')
@@ -317,8 +306,6 @@ INSTRUCCIONES PRIORITARIAS:
     if (updateError) {
       console.error('Error actualizando último speaker:', updateError);
     }
-    
-    console.log(`✅ Mensaje de ${nextSpeaker.name} insertado correctamente`);
     
     return NextResponse.json({
       success: true,

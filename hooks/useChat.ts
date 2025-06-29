@@ -25,7 +25,6 @@ export const useChat = () => {
   // Obtener salas disponibles
   const fetchRooms = useCallback(async () => {
     try {
-      console.log('🏗️ Cargando salas disponibles...')
       const { data, error } = await supabase
         .from('rooms')
         .select('*')
@@ -36,19 +35,26 @@ export const useChat = () => {
         return
       }
       
-      console.log('🏠 Salas obtenidas:', data?.map(r => ({ name: r.name, id: r.id, is_general: r.is_general })))
+      // Solo log en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🏠 Salas obtenidas:', data?.length || 0)
+      }
       setRooms(data || [])
       
-      // Establecer sala inicial si no hay una seleccionada
-      if (data && data.length > 0 && !currentRoom) {
-        const generalRoom = data.find(room => room.is_general) || data[0]
-        console.log('🎯 Estableciendo sala inicial:', generalRoom.name)
-        setCurrentRoom(generalRoom)
+      // Establecer sala inicial solo la primera vez
+      if (data && data.length > 0) {
+        setCurrentRoom(prev => {
+          if (!prev) {
+            const generalRoom = data.find(room => room.is_general) || data[0]
+            return generalRoom
+          }
+          return prev
+        })
       }
     } catch (err) {
       console.error('Error fetching rooms:', err)
     }
-  }, [currentRoom])
+  }, []) // ✅ Sin dependencias para evitar loop infinito
 
   // Obtener todos los mensajes
   const fetchAllMessages = useCallback(async () => {
@@ -63,7 +69,10 @@ export const useChat = () => {
         throw error
       }
       
-      console.log('Todos los mensajes obtenidos:', data?.length || 0)
+      // Solo log en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📨 Mensajes obtenidos:', data?.length || 0)
+      }
       setAllMessages(data || [])
       setError(null)
     } catch (err) {
@@ -74,32 +83,16 @@ export const useChat = () => {
 
   // Filtrar mensajes por sala actual
   useEffect(() => {
-    console.log('🔍 Filtro de mensajes ejecutándose:', {
-      currentRoom: currentRoom?.name,
-      totalMessages: allMessages.length,
-      currentRoomId: currentRoom?.id
-    })
-    
     if (currentRoom) {
       const roomMessages = allMessages.filter(message => message.room_name === currentRoom.name)
-      console.log(`📨 Mensajes filtrados para "${currentRoom.name}":`, {
-        total: roomMessages.length,
-        mensajes: roomMessages.map(m => ({ 
-          id: m.id.slice(0, 8), 
-          user: m.username, 
-          preview: m.content.slice(0, 50) 
-        }))
-      })
       setMessages(roomMessages)
     } else {
-      console.log('⚠️ No hay sala actual, mostrando todos los mensajes')
       setMessages(allMessages)
     }
   }, [currentRoom, allMessages])
 
   // Cambiar sala
   const changeRoom = useCallback((room: Room) => {
-    console.log(`🏠 Cambiando a sala: "${room.name}" (ID: ${room.id})`)
     setCurrentRoom(room)
   }, [])
 
@@ -121,22 +114,17 @@ export const useChat = () => {
       
       if (error) {
         console.error('Error cleaning up inactive users:', error)
-      } else {
-        console.log('🧹 Limpieza manual de usuarios inactivos completada')
       }
     } catch (err) {
       console.error('Error in cleanup:', err)
     }
   }, [])
 
-    // Obtener usuarios online en tiempo real (con debugging)
+  // Obtener usuarios online en tiempo real
   const fetchUsers = useCallback(async () => {
     try {
-      console.log('🔍 Iniciando fetchUsers...')
-      
       // Filtrar usuarios activos directamente en la consulta
       const activeThreshold = new Date(Date.now() - USER_ACTIVITY_CONFIG.MAX_INACTIVE_TIME).toISOString()
-      console.log('⏰ Threshold de actividad:', activeThreshold)
       
       const { data, error } = await supabase
         .from('users')
@@ -150,33 +138,21 @@ export const useChat = () => {
         throw error
       }
       
-      console.log('📊 Datos de usuarios obtenidos:', {
-        total: data?.length || 0,
-        usuarios: data?.map(u => ({
-          username: u.username,
-          last_seen: u.last_seen,
-          minutes_ago: ((Date.now() - new Date(u.last_seen).getTime()) / 60000).toFixed(1)
-        }))
-      })
-      
       // Detectar cambios en usuarios para notificaciones (solo si hay usuarios previos)
-      if (data && currentUser && users.length > 0) {
-        const newUsers = data.filter(user => user.username !== currentUser.username)
-        const currentUsernames = users
-          .filter(user => user.username !== currentUser.username)
+      const previousUsers = users
+      const previousCurrentUser = currentUser
+      
+      if (data && previousCurrentUser && previousUsers.length > 0) {
+        const newUsers = data.filter(user => user.username !== previousCurrentUser.username)
+        const currentUsernames = previousUsers
+          .filter(user => user.username !== previousCurrentUser.username)
           .map(user => user.username)
         const newUsernames = newUsers.map(user => user.username)
-        
-        console.log('🔄 Comparando usuarios:', {
-          anteriores: currentUsernames,
-          nuevos: newUsernames
-        })
         
         // Detectar usuarios que se conectaron
         const justConnected = newUsernames.filter(username => !currentUsernames.includes(username))
         if (justConnected.length > 0) {
           justConnected.forEach(username => {
-            console.log(SYSTEM_MESSAGES.USER_CONNECTED(username))
             setOnlineNotification(SYSTEM_MESSAGES.USER_CONNECTED(username))
             setTimeout(() => setOnlineNotification(null), USER_ACTIVITY_CONFIG.NOTIFICATION_DURATION)
           })
@@ -186,20 +162,18 @@ export const useChat = () => {
         const justDisconnected = currentUsernames.filter(username => !newUsernames.includes(username))
         if (justDisconnected.length > 0) {
           justDisconnected.forEach(username => {
-            console.log(SYSTEM_MESSAGES.USER_DISCONNECTED(username))
             setOnlineNotification(SYSTEM_MESSAGES.USER_DISCONNECTED(username))
             setTimeout(() => setOnlineNotification(null), USER_ACTIVITY_CONFIG.NOTIFICATION_DURATION)
           })
         }
       }
       
-      console.log('⚡ Usuarios online finales:', data?.length || 0)
       setUsers(data || [])
     } catch (err) {
       console.error('❌ Error general en fetchUsers:', err)
       // No establecer error aquí para no interferir con el flujo principal
     }
-  }, [users, currentUser])
+  }, []) // ✅ Sin dependencias para evitar loop infinito
 
   // Crear o obtener usuario
   const createOrGetUser = useCallback(async (username: string): Promise<User | null> => {
@@ -339,8 +313,6 @@ export const useChat = () => {
   // Función para invocar a NEO
   const invokeNEO = useCallback(async (userMessage: string, roomId: string) => {
     try {
-      console.log('Invocando a NEO con:', userMessage)
-      
       const response = await fetch('/api/neo', {
         method: 'POST',
         headers: {
@@ -381,7 +353,10 @@ export const useChat = () => {
         throw neoError
       }
 
-      console.log('NEO respondió exitosamente')
+      // Solo log en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('NEO respondió exitosamente')
+      }
     } catch (err) {
       console.error('Error invoking NEO:', err)
       setError('Error al invocar a NEO. Verifica tu conexión.')
@@ -408,8 +383,6 @@ export const useChat = () => {
   // Función para invocar a LATAMARA
   const invokeLatamara = useCallback(async (userMessage: string, roomId: string) => {
     try {
-      console.log('Invocando a LATAMARA con:', userMessage)
-      
       const response = await fetch('/api/latamara', {
         method: 'POST',
         headers: {
@@ -450,7 +423,10 @@ export const useChat = () => {
         throw latamaraError
       }
 
-      console.log('LATAMARA respondió exitosamente')
+      // Solo log en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('LATAMARA respondió exitosamente')
+      }
     } catch (err) {
       console.error('Error invoking LATAMARA:', err)
       setError('Error al invocar a LATAMARA. Verifica tu conexión.')
@@ -477,8 +453,6 @@ export const useChat = () => {
   // Función para invocar a BARRILINTER
   const invokeBarrilinter = useCallback(async (userMessage: string, roomId: string) => {
     try {
-      console.log('🎓 Frontend: Invocando a BARRILINTER con:', userMessage)
-      
       const response = await fetch('/api/barrilinter', {
         method: 'POST',
         headers: {
@@ -492,23 +466,8 @@ export const useChat = () => {
       })
 
       const data = await response.json()
-      console.log('🎓 Frontend: Respuesta recibida de BARRILINTER API:', { 
-        ok: response.ok, 
-        status: response.status,
-        hasMessage: !!data.message 
-      })
 
       if (!response.ok) {
-        console.error('🚨 Frontend: Error en respuesta de BARRILINTER:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: data,
-          hasError: !!data?.error,
-          hasDetails: !!data?.details,
-          errorMessage: data?.error,
-          errorDetails: data?.details
-        })
-        
         const errorMsg = data?.error || data?.details || `Error ${response.status}: ${response.statusText}`
         throw new Error(errorMsg)
       }
@@ -531,16 +490,16 @@ export const useChat = () => {
         })
 
       if (barrilinterError) {
-        console.error('🚨 Frontend: Error inserting BARRILINTER message:', barrilinterError)
+        console.error('Error inserting BARRILINTER message:', barrilinterError)
         throw barrilinterError
       }
 
-      console.log('✅ Frontend: BARRILINTER respondió exitosamente y se guardó en BD')
+      // Solo log en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('BARRILINTER respondió exitosamente')
+      }
     } catch (err) {
-      console.error('🚨 Frontend: Error general invocando BARRILINTER:', {
-        error: err instanceof Error ? err.message : err,
-        stack: err instanceof Error ? err.stack : undefined
-      })
+      console.error('Error invocando BARRILINTER:', err)
       setError('Error al invocar a BARRILINTER. Verifica tu conexión.')
       
       // Intentar insertar mensaje de error
@@ -557,7 +516,7 @@ export const useChat = () => {
             })
         }
       } catch (errorInsertError) {
-        console.error('Error inserting error message:', errorInsertError)
+        console.error('Error inserting BARRILINTER error message:', errorInsertError)
       }
     }
   }, [currentUser, messages, getBarrilinterUserId])
