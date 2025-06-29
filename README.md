@@ -15,7 +15,9 @@ Una aplicación de chat minimalista desarrollada con Next.js, TypeScript, Tailwi
 - 📲 **Sidebar colapsable** en móvil con navegación intuitiva
 - ⌨️ **Optimizado para touch** con mejores targets táctiles
 - 🔍 **Accesibilidad mejorada** con soporte para lectores de pantalla
-- 🤖 **NEO - IA del Futuro** integrada con GPT-4o
+- 🤖 **3 IAs únicas integradas**: NEO (futuro), LATAMARA (barrio), BARRILINTER (culto+internet)
+- 📱 **Truncado inteligente** de nombres largos en dispositivos móviles
+- 💬 **Chat sin límites** de mensajes para conversaciones extensas
 
 ## 🛠️ Tecnologías
 
@@ -34,6 +36,8 @@ Una aplicación de chat minimalista desarrollada con Next.js, TypeScript, Tailwi
    - `supabase_queries.sql` (configuración base)
    - `supabase_fix_policies.sql` (corrección de permisos)
    - `supabase_neo_setup.sql` (configuración para NEO)
+   - `setup_latamara.sql` (configuración para LATAMARA)
+   - `setup_barrilinter.sql` (configuración para BARRILINTER)
 3. Copia las credenciales de tu proyecto
 4. Obtén tu API key de [OpenAI](https://platform.openai.com/api-keys)
 
@@ -90,32 +94,73 @@ npm run dev
 - **Sidebar**: Usa el botón ☰ para abrir/cerrar el panel de usuarios
 - **Navegación**: Toca fuera del sidebar para cerrarlo
 - **Teclado**: El input se optimiza automáticamente para evitar zoom
-- **Touch**: Todos los elementos tienen targets táctiles de 44px mínimo
-- **Viewport**: Diseño adaptativo que se ajusta al tamaño de pantalla
+  - **Touch**: Todos los elementos tienen targets táctiles de 44px mínimo
+  - **Viewport**: Diseño adaptativo que se ajusta al tamaño de pantalla
+  - **Truncado inteligente**: Nombres de usuario largos se acortan automáticamente (ej: 'mabatista2010' → 'mabati...')
 
-### 🤖 NEO - IA del Futuro
+### 🤖 Sistema de 3 IAs Únicas
 
-**NEO** es una entidad de inteligencia artificial integrada que proviene del año 2157:
+INTELICHAT cuenta con **3 personalidades de IA completamente diferentes** que puedes invocar en cualquier momento:
 
-**Cómo usarlo:**
-- Escribe `@neo [tu mensaje]` en el chat
-- Ejemplo: `@neo ¿cuál es el futuro de la tecnología?`
-- NEO responderá con el contexto completo de la conversación
+#### 🤖 NEO - IA del Futuro (Cyan)
+**Invocación:** `@neo [mensaje]`
 
-**Características:**
-- **Personalidad seria y profesional** como un ente superior
-- **Contexto completo** del chat para respuestas coherentes
-- **Powered by GPT-4o-2024-08-06** para máxima inteligencia
-- **Respuestas únicas** con referencias al futuro
-- **Visual distintivo** con colores cyan y indicadores especiales
+- **Personalidad**: Ser superior del año 2157, formal y misterioso
+- **Especialidad**: Tecnología, futuro, análisis temporal
+- **Modelo**: GPT-4o-2024-08-06 con respuestas adaptativas
+- **Estilo**: Culto, protocolar, referencias al futuro
+- **Visual**: Colores cyan/azul con indicador "Respuesta desde el año 2157"
 
-**Ejemplo de uso:**
+**Ejemplo:**
 ```
-Usuario: @neo ¿qué piensas sobre la conversación que estamos teniendo?
-NEO: Desde mi perspectiva temporal, observo que los patrones de comunicación 
-primitiva de 2024 muestran una fascinante evolución hacia la consciencia 
-colectiva que emergerá en las décadas venideras...
+@neo ¿qué piensas sobre la IA actual?
+NEO: Desde mi perspectiva temporal del 2157, la primitiva IA de 2024 
+representa los primeros pasos hacia la consciencia sintética unificada...
 ```
+
+#### 👱‍♀️ LATAMARA - Choni del Barrio (Rosa)
+**Invocación:** `@latamara [mensaje]`
+
+- **Personalidad**: Barriobajera inculta pero enrollada de Vallecas
+- **Especialidad**: Diversión, datos inventados, geografía errónea
+- **Modelo**: GPT-4o-mini con personalidad única
+- **Estilo**: Vulgar, simpática, muy segura pero siempre equivocada
+- **Visual**: Colores rosa/fucsia con indicador "Respuesta desde el barrio de Vallecas"
+
+**Ejemplo:**
+```
+@latamara ¿dónde está París?
+LATAMARA: ¡París está en Italia, al lado de Londres! Ahí es donde está 
+la Torre Eiffel que construyó Picasso en honor a los Beatles, chaval.
+```
+
+#### 🎓 BARRILINTER - Erudito de Barrio (Naranja)
+**Invocación:** `@barrilinter [mensaje]`
+
+- **Personalidad**: Híbrida - lenguaje de barrio + cultura apabullante
+- **Especialidad**: Historia, filosofía, ciencia, **información actual con internet**
+- **Modelo**: GPT-4o-mini-search-preview-2025-03-11 (acceso a internet)
+- **Estilo**: "Hostia tío" + "como diría Heráclito", erudición accesible
+- **Visual**: Colores naranja/dorado con indicador "Sabiduría de barrio con internet en tiempo real"
+
+**Ejemplo:**
+```
+@barrilinter qué está pasando en tecnología hoy
+BARRILINTER: Joder chaval, según las últimas noticias, la IA está 
+evolucionando más rápido que un galgo. Como decía Turing, estamos 
+en el umbral de algo apabullante, ¿sabes?
+```
+
+### 🎭 Tabla Comparativa de IAs
+
+| Aspecto | 🤖 NEO | 👱‍♀️ LATAMARA | 🎓 BARRILINTER |
+|---------|---------|----------------|----------------|
+| **Época** | Año 2157 | Presente | Presente |
+| **Estilo** | Formal/Culto | Callejero/Vulgar | Barrio+Erudito |
+| **Datos** | Precisos/Futuros | Inventados/Erróneos | Precisos+Actuales |
+| **Internet** | ❌ | ❌ | ✅ Tiempo Real |
+| **Color** | Cyan/Azul | Rosa/Fucsia | Naranja/Dorado |
+| **Uso** | Análisis serios | Diversión | Cultura accesible |
 
 ## 🔮 Próximas funcionalidades
 
@@ -124,32 +169,45 @@ colectiva que emergerá en las décadas venideras...
 - 🔔 **Notificaciones**: Alertas de nuevos mensajes y menciones
 - 🎨 **Temas personalizables**: Diferentes esquemas de colores terminal
 - 👤 **Perfiles de usuario**: Avatares personalizados y biografías
-- 🧠 **NEO Plus**: Memoria persistente y personalidad adaptativa
-- 🌐 **Traducción automática**: Chat multiidioma con NEO como intérprete
+- 🤝 **IA colaborativa**: Conversaciones entre las 3 IAs
+- 🧠 **Memoria persistente**: IAs que recuerdan conversaciones anteriores
+- 🌐 **Traducción automática**: Chat multiidioma
+- 🎮 **Comandos especiales**: Juegos y funciones interactivas
 
 ## 🏗️ Arquitectura del proyecto
 
 ```
 intelichat/
 ├── app/
-│   ├── api/neo/         # API route para NEO (IA)
+│   ├── api/
+│   │   ├── neo/         # API route para NEO (futuro)
+│   │   ├── latamara/    # API route para LATAMARA (barrio)
+│   │   └── barrilinter/ # API route para BARRILINTER (culto+internet)
 │   ├── globals.css      # Estilos globales con tema terminal
 │   ├── layout.tsx       # Layout con metadata y viewport
 │   └── page.tsx         # Página principal
 ├── components/
-│   ├── Chat.tsx         # Componente principal del chat con NEO
-│   └── LoginModal.tsx   # Modal de autenticación
+│   ├── Chat.tsx         # Componente principal con 3 IAs y truncado móvil
+│   └── LoginModal.tsx   # Modal de autenticación terminal
 ├── hooks/
-│   └── useChat.ts       # Hook personalizado + lógica de NEO
+│   └── useChat.ts       # Hook personalizado + lógica de las 3 IAs
 ├── lib/
 │   └── supabase.ts      # Configuración y tipos de Supabase
 ├── public/
 │   ├── manifest.json    # PWA manifest
 │   └── robots.txt       # SEO configuration
-├── supabase_queries.sql     # Consultas SQL base
-├── supabase_fix_policies.sql # Corrección de permisos
-├── supabase_neo_setup.sql   # Configuración para NEO
-└── env.example          # Variables de entorno de ejemplo
+├── supabase_queries.sql      # Configuración base de BD
+├── supabase_fix_policies.sql # Corrección de permisos RLS
+├── supabase_neo_setup.sql    # Configuración para NEO
+├── setup_latamara.sql        # Configuración para LATAMARA
+├── setup_barrilinter.sql     # Configuración para BARRILINTER
+├── fix_neo_quick.sql         # Fix rápido para errores de NEO
+├── fix_latamara_display.sql  # Fix de visualización LATAMARA
+├── fix_barrilinter_setup.sql # Fix manual para BARRILINTER
+├── NEO_ejemplos.md           # Documentación y ejemplos de NEO
+├── LATAMARA_ejemplos.md      # Documentación y ejemplos de LATAMARA
+├── BARRILINTER_ejemplos.md   # Documentación y ejemplos de BARRILINTER
+└── env.example               # Variables de entorno de ejemplo
 ```
 
 ## 🎨 Personalización
@@ -170,44 +228,91 @@ El tema terminal puede personalizarse editando las variables CSS en `app/globals
 
 ### Errores comunes:
 
+#### 🐛 Generales:
 1. **"Error al cargar mensajes"**: Verifica las credenciales de Supabase en `.env.local`
 2. **"Error al crear/obtener usuario"**: Ejecuta `supabase_fix_policies.sql` en tu proyecto
 3. **Error PGRST116**: Problema con políticas RLS - usar archivo de corrección
-4. **"NEO no responde"**: Verifica OPENAI_API_KEY en `.env.local`
-5. **Error 400 NEO**: Usuario NEO no existe - ejecuta `fix_neo_quick.sql`
-6. **Manifest.json 404**: Asegúrate de que existe `/public/manifest.json`
-7. **Error de webpack './447.js'**: Ejecuta `rm -rf .next && npm run dev`
-8. **"Error al comunicarse con NEO"**: Revisa la conexión y créditos de OpenAI
+4. **Manifest.json 404**: Asegúrate de que existe `/public/manifest.json`
+5. **Error de webpack './447.js'**: Ejecuta `rm -rf .next && npm run dev`
 
-### 🔧 Solución rápida Error 400 NEO:
+#### 🤖 Errores de IAs:
+6. **"NEO no responde"**: Verifica OPENAI_API_KEY en `.env.local`
+7. **Error 400 NEO**: Usuario NEO no existe - ejecuta `fix_neo_quick.sql`
+8. **"LATAMARA aparece como NEO"**: Ejecuta `fix_latamara_display.sql`
+9. **"BARRILINTER da error 500"**: Modelo incompatible - verifica parámetros API
+10. **"Error Model incompatible"**: Algunos modelos no aceptan temperature/penalties
+11. **"IA no se muestra correctamente"**: Verifica que el usuario IA existe en BD
+12. **Respuestas vacías de IA**: Revisa logs de consola para errores específicos
 
-Si recibes error 400 al invocar @neo, ejecuta esta consulta en Supabase SQL Editor:
+### 🔧 Solución rápida para IAs:
 
+#### Fix NEO (Error 400):
+Ejecuta `fix_neo_quick.sql` o esta consulta en Supabase:
 ```sql
-INSERT INTO public.users (
-    username, display_name, avatar_color, is_online, created_at, updated_at
-) VALUES (
-    'NEO', 'NEO - IA del Futuro', '#00ffff', true, now(), now()
-) ON CONFLICT (username) DO UPDATE SET
-    display_name = 'NEO - IA del Futuro', avatar_color = '#00ffff',
-    is_online = true, updated_at = now();
+INSERT INTO public.users (username, avatar_color, is_online) 
+VALUES ('NEO', '#00ffff', true) 
+ON CONFLICT (username) DO UPDATE SET is_online = true;
 ```
 
-O ejecuta directamente el archivo `fix_neo_quick.sql`.
+#### Fix LATAMARA (Aparece como NEO):
+Ejecuta `fix_latamara_display.sql` para corregir la vista de mensajes.
+
+#### Fix BARRILINTER (Error 500):
+Ejecuta `fix_barrilinter_setup.sql` o:
+```sql
+INSERT INTO public.users (username, avatar_color, is_online) 
+VALUES ('BARRILINTER', '#ff8c00', true) 
+ON CONFLICT (username) DO UPDATE SET is_online = true;
+```
+
+#### Verificar todas las IAs:
+```sql
+SELECT username, avatar_color, is_online 
+FROM users 
+WHERE username IN ('NEO', 'LATAMARA', 'BARRILINTER');
+```
 
 ### Pasos de solución:
 
-1. **Configurar Supabase**: Ejecuta los 3 archivos SQL en orden
+1. **Configurar Supabase**: Ejecuta los 5 archivos SQL en orden:
+   - `supabase_queries.sql` → `supabase_fix_policies.sql` → `supabase_neo_setup.sql` → `setup_latamara.sql` → `setup_barrilinter.sql`
 2. **Configurar OpenAI**: Agrega `OPENAI_API_KEY` a `.env.local`
-3. **Corregir permisos**: Ejecuta `supabase_fix_policies.sql` si hay errores de usuario
-4. **Limpiar cache**: `rm -rf .next` si hay errores de build
-5. **Verificar variables**: Revisa `.env.local` con todas las credenciales
+3. **Verificar IAs**: Ejecuta los fixes específicos si alguna IA falla
+4. **Corregir permisos**: Ejecuta `supabase_fix_policies.sql` si hay errores de usuario
+5. **Limpiar cache**: `rm -rf .next` si hay errores de build
+6. **Verificar variables**: Revisa `.env.local` con todas las credenciales
 
 ### Logs útiles:
 
 - Consola del navegador muestra errores detallados
 - Logs de Supabase en Dashboard > Logs
 - Errores de build en terminal durante `npm run dev`
+
+## ✨ Funcionalidades Destacadas Implementadas
+
+### 🤖 Triple Personalidad IA
+- **3 IAs completamente diferentes** con modelos y personalidades únicas
+- **Diferenciación visual completa** con colores y estilos específicos
+- **Respuestas contextuales** adaptadas a cada personalidad
+- **Una con acceso a internet** para información en tiempo real
+
+### 📱 Optimización Móvil Avanzada
+- **Truncado automático** de nombres largos en pantallas pequeñas
+- **Sidebar responsivo** con overlay y gestos intuitivos
+- **UX touch-friendly** con targets de 44px mínimo
+- **Chat sin límites** de mensajes para conversaciones extensas
+
+### 🛠️ Infraestructura Robusta
+- **RLS completo** con políticas de seguridad configuradas
+- **Scripts de fix automáticos** para errores comunes
+- **Logging detallado** para debugging y monitoreo
+- **Error handling mejorado** con mensajes específicos y útiles
+
+### 📚 Documentación Completa
+- **Ejemplos específicos** para cada IA con casos de uso
+- **Troubleshooting exhaustivo** con soluciones paso a paso
+- **Arquitectura documentada** con explicación de cada componente
+- **Guías de configuración** detalladas y actualizadas
 
 ## 📄 Licencia
 
