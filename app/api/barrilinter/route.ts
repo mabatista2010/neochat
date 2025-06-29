@@ -96,10 +96,11 @@ Responde como BARRILINTER con tu personalidad híbrida de barriobajero culto.
 Si la pregunta requiere información actual, úsala para dar la respuesta más precisa.
 `
 
-    console.log('Enviando petición a OpenAI para BARRILINTER:', {
-      model: 'gpt-4o-mini-search-preview-2025-03-11',
+    console.log('🎓 BARRILINTER: Enviando petición a OpenAI:', {
+      model: 'gpt-4o-mini-search-preview-2025-03-11', // Con acceso a internet
       messageLength: message.length,
-      contextLength: contextString.length
+      contextLength: contextString.length,
+      hasApiKey: !!process.env.OPENAI_API_KEY
     })
 
     // Detectar si es una pregunta simple
@@ -107,8 +108,12 @@ Si la pregunta requiere información actual, úsala para dar la respuesta más p
       /^(hola|hi|hey|¿?cómo estás|qué tal|buenas|saludos)$/i.test(message.trim())
 
     // Detectar si requiere búsqueda de información actual
-    const needsCurrentInfo = /\b(actual|hoy|ahora|2024|2025|último|reciente|nuevo|actual|noticia|último)\b/i.test(message) ||
-      /\b(qué está pasando|qué pasa|noticias|actualidad)\b/i.test(message)
+    const needsCurrentInfo = /\b(actual|hoy|ahora|2024|2025|último|reciente|nuevo|noticia|noticias)\b/i.test(message) ||
+      /\b(qué está pasando|qué pasa|actualidad|últimas)\b/i.test(message)
+    
+    // Detectar si es una pregunta compleja que necesita más tokens
+    const isComplexQuestion = message.length > 50 || needsCurrentInfo ||
+      /\b(explica|cuéntame|analiza|compara|diferencia|historia|filosofía|ciencia)\b/i.test(message)
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini-search-preview-2025-03-11', // Modelo con acceso a internet
@@ -122,7 +127,7 @@ Si la pregunta requiere información actual, úsala para dar la respuesta más p
           content: userPrompt
         }
       ],
-      max_tokens: isSimpleQuestion ? 150 : needsCurrentInfo ? 600 : 450,
+      max_tokens: isSimpleQuestion ? 150 : needsCurrentInfo ? 700 : isComplexQuestion ? 600 : 350,
       temperature: 0.8, // Creativo pero no tanto como LATAMARA
       presence_penalty: 0.3,
       frequency_penalty: 0.2,
@@ -137,7 +142,10 @@ Si la pregunta requiere información actual, úsala para dar la respuesta más p
       )
     }
 
-    console.log('Respuesta de BARRILINTER generada exitosamente')
+    console.log('✅ BARRILINTER: Respuesta generada exitosamente:', {
+      length: aiResponse.length,
+      tokens: completion.usage?.total_tokens || 0
+    })
 
     return NextResponse.json({
       message: aiResponse.trim(),
@@ -145,12 +153,41 @@ Si la pregunta requiere información actual, úsala para dar la respuesta más p
     })
 
   } catch (error) {
-    console.error('Error en API de BARRILINTER:', error)
+    // Logging detallado del error
+    console.error('🚨 Error en API de BARRILINTER:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+      type: typeof error,
+      fullError: error
+    })
+    
+    // Crear mensaje de error más informativo
+    let errorMessage = 'Error interno del servidor'
+    let errorDetails = 'Error desconocido'
+    
+    if (error instanceof Error) {
+      errorMessage = error.message || 'Error de OpenAI'
+      errorDetails = error.message
+      
+      // Casos específicos de OpenAI
+      if (error.message.includes('model')) {
+        errorMessage = 'Modelo no disponible'
+        errorDetails = 'El modelo GPT especificado no está disponible'
+      } else if (error.message.includes('rate limit')) {
+        errorMessage = 'Límite de rate excedido'
+        errorDetails = 'Demasiadas peticiones, intenta en unos segundos'
+      } else if (error.message.includes('api key')) {
+        errorMessage = 'Error de autenticación'
+        errorDetails = 'API key de OpenAI no válida'
+      }
+    }
     
     return NextResponse.json(
       { 
-        error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Error desconocido'
+        error: errorMessage,
+        details: errorDetails,
+        debug: process.env.NODE_ENV === 'development' ? String(error) : undefined
       },
       { status: 500 }
     )

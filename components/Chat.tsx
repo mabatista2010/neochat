@@ -226,17 +226,7 @@ const Chat: React.FC<ChatProps> = ({
               const isBarrilinter = message.message_type === 'ai' && (message.username === 'BARRILINTER' || message.username?.includes('BARRILINTER'))
               const isAI = isNeo || isLatamara || isBarrilinter
               
-              // Debug para identificar el problema
-              if (message.message_type === 'ai') {
-                console.log('🤖 Mensaje IA detectado:', {
-                  id: message.id,
-                  username: message.username,
-                  isNeo,
-                  isLatamara,
-                  isBarrilinter,
-                  content: message.content.substring(0, 50) + '...'
-                })
-              }
+              // Debug eliminado para evitar spam en consola
               
               return (
                 <div key={message.id} className={`group ${isAI ? 'ai-message' : ''}`}>
@@ -302,7 +292,7 @@ const Chat: React.FC<ChatProps> = ({
                   )}
                   {isBarrilinter && (
                     <div className="text-xs text-orange-600 mt-1 ml-16 md:ml-20">
-                      {'>'} Sabiduría de barrio con acceso a internet
+                      {'>'} Sabiduría de barrio con internet en tiempo real
                     </div>
                   )}
                 </div>
@@ -369,7 +359,7 @@ const Chat: React.FC<ChatProps> = ({
                {'>'} Escribe &quot;@latamara [mensaje]&quot; para la choni del barrio
              </div>
              <div className="text-orange-600">
-               {'>'} Escribe &quot;@barrilinter [mensaje]&quot; para el culto de barrio
+               {'>'} Escribe &quot;@barrilinter [mensaje]&quot; para el culto de barrio con internet
              </div>
            </div>
         </div>

@@ -322,7 +322,7 @@ export const useChat = () => {
   // Función para invocar a BARRILINTER
   const invokeBarrilinter = useCallback(async (userMessage: string, roomId: string) => {
     try {
-      console.log('Invocando a BARRILINTER con:', userMessage)
+      console.log('🎓 Frontend: Invocando a BARRILINTER con:', userMessage)
       
       const response = await fetch('/api/barrilinter', {
         method: 'POST',
@@ -337,9 +337,25 @@ export const useChat = () => {
       })
 
       const data = await response.json()
+      console.log('🎓 Frontend: Respuesta recibida de BARRILINTER API:', { 
+        ok: response.ok, 
+        status: response.status,
+        hasMessage: !!data.message 
+      })
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al comunicarse con BARRILINTER')
+        console.error('🚨 Frontend: Error en respuesta de BARRILINTER:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: data,
+          hasError: !!data?.error,
+          hasDetails: !!data?.details,
+          errorMessage: data?.error,
+          errorDetails: data?.details
+        })
+        
+        const errorMsg = data?.error || data?.details || `Error ${response.status}: ${response.statusText}`
+        throw new Error(errorMsg)
       }
 
       // Obtener ID de usuario BARRILINTER
@@ -360,13 +376,16 @@ export const useChat = () => {
         })
 
       if (barrilinterError) {
-        console.error('Error inserting BARRILINTER message:', barrilinterError)
+        console.error('🚨 Frontend: Error inserting BARRILINTER message:', barrilinterError)
         throw barrilinterError
       }
 
-      console.log('BARRILINTER respondió exitosamente')
+      console.log('✅ Frontend: BARRILINTER respondió exitosamente y se guardó en BD')
     } catch (err) {
-      console.error('Error invoking BARRILINTER:', err)
+      console.error('🚨 Frontend: Error general invocando BARRILINTER:', {
+        error: err instanceof Error ? err.message : err,
+        stack: err instanceof Error ? err.stack : undefined
+      })
       setError('Error al invocar a BARRILINTER. Verifica tu conexión.')
       
       // Intentar insertar mensaje de error
