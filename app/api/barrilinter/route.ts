@@ -128,9 +128,7 @@ Si la pregunta requiere información actual, úsala para dar la respuesta más p
         }
       ],
       max_tokens: isSimpleQuestion ? 150 : needsCurrentInfo ? 700 : isComplexQuestion ? 600 : 350,
-      temperature: 0.8, // Creativo pero no tanto como LATAMARA
-      presence_penalty: 0.3,
-      frequency_penalty: 0.2,
+      // Nota: Este modelo no acepta temperature, presence_penalty, frequency_penalty
     })
 
     const aiResponse = completion.choices[0]?.message?.content
