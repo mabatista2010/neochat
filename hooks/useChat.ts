@@ -119,14 +119,13 @@ export const useChat = () => {
     }
   }, [])
 
-  // Función para obtener ID de usuario NEO
+  // Función para obtener ID de usuario NEO (versión simplificada)
   const getNeoUserId = useCallback(async (): Promise<string | null> => {
     try {
       const { data, error } = await supabase
         .from('users')
         .select('id')
-        .in('username', ['NEO', 'NEO_AI', 'NEO_SYSTEM'])
-        .limit(1)
+        .eq('username', 'NEO')
         .single()
 
       if (error || !data) {
