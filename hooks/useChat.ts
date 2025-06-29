@@ -48,21 +48,21 @@ export const useChat = () => {
       if (error) {
         console.error('Error cleaning up inactive users:', error)
       } else {
-        console.log(SYSTEM_MESSAGES.CLEANUP_COMPLETED)
+        console.log('🧹 Limpieza manual de usuarios inactivos completada')
       }
     } catch (err) {
       console.error('Error in cleanup:', err)
     }
   }, [])
 
-  // Obtener usuarios online (versión mejorada con filtro de tiempo)
+    // Obtener usuarios online en tiempo real (con debugging)
   const fetchUsers = useCallback(async () => {
     try {
-      // Primero limpiar usuarios inactivos
-      await cleanupInactiveUsers()
+      console.log('🔍 Iniciando fetchUsers...')
       
-      // Obtener solo usuarios que han estado activos según configuración
+      // Filtrar usuarios activos directamente en la consulta
       const activeThreshold = new Date(Date.now() - USER_ACTIVITY_CONFIG.MAX_INACTIVE_TIME).toISOString()
+      console.log('⏰ Threshold de actividad:', activeThreshold)
       
       const { data, error } = await supabase
         .from('users')
@@ -72,46 +72,60 @@ export const useChat = () => {
         .order('username')
 
       if (error) {
-        console.error('Error fetching users:', error)
+        console.error('❌ Error fetching users:', error)
         throw error
       }
       
-      // Detectar cambios en usuarios para notificaciones
-      if (data && currentUser) {
+      console.log('📊 Datos de usuarios obtenidos:', {
+        total: data?.length || 0,
+        usuarios: data?.map(u => ({
+          username: u.username,
+          last_seen: u.last_seen,
+          minutes_ago: ((Date.now() - new Date(u.last_seen).getTime()) / 60000).toFixed(1)
+        }))
+      })
+      
+      // Detectar cambios en usuarios para notificaciones (solo si hay usuarios previos)
+      if (data && currentUser && users.length > 0) {
         const newUsers = data.filter(user => user.username !== currentUser.username)
         const currentUsernames = users
           .filter(user => user.username !== currentUser.username)
           .map(user => user.username)
         const newUsernames = newUsers.map(user => user.username)
         
+        console.log('🔄 Comparando usuarios:', {
+          anteriores: currentUsernames,
+          nuevos: newUsernames
+        })
+        
         // Detectar usuarios que se conectaron
         const justConnected = newUsernames.filter(username => !currentUsernames.includes(username))
-                 if (justConnected.length > 0) {
-           justConnected.forEach(username => {
-             console.log(SYSTEM_MESSAGES.USER_CONNECTED(username))
-             setOnlineNotification(SYSTEM_MESSAGES.USER_CONNECTED(username))
-             setTimeout(() => setOnlineNotification(null), USER_ACTIVITY_CONFIG.NOTIFICATION_DURATION)
-           })
-         }
-         
-         // Detectar usuarios que se desconectaron
-         const justDisconnected = currentUsernames.filter(username => !newUsernames.includes(username))
-         if (justDisconnected.length > 0) {
-           justDisconnected.forEach(username => {
-             console.log(SYSTEM_MESSAGES.USER_DISCONNECTED(username))
-             setOnlineNotification(SYSTEM_MESSAGES.USER_DISCONNECTED(username))
-             setTimeout(() => setOnlineNotification(null), USER_ACTIVITY_CONFIG.NOTIFICATION_DURATION)
-           })
-         }
+        if (justConnected.length > 0) {
+          justConnected.forEach(username => {
+            console.log(SYSTEM_MESSAGES.USER_CONNECTED(username))
+            setOnlineNotification(SYSTEM_MESSAGES.USER_CONNECTED(username))
+            setTimeout(() => setOnlineNotification(null), USER_ACTIVITY_CONFIG.NOTIFICATION_DURATION)
+          })
+        }
+        
+        // Detectar usuarios que se desconectaron
+        const justDisconnected = currentUsernames.filter(username => !newUsernames.includes(username))
+        if (justDisconnected.length > 0) {
+          justDisconnected.forEach(username => {
+            console.log(SYSTEM_MESSAGES.USER_DISCONNECTED(username))
+            setOnlineNotification(SYSTEM_MESSAGES.USER_DISCONNECTED(username))
+            setTimeout(() => setOnlineNotification(null), USER_ACTIVITY_CONFIG.NOTIFICATION_DURATION)
+          })
+        }
       }
       
-      console.log('🟢 Usuarios online activos:', data?.length || 0)
+      console.log('⚡ Usuarios online finales:', data?.length || 0)
       setUsers(data || [])
     } catch (err) {
-      console.error('Error fetching users:', err)
+      console.error('❌ Error general en fetchUsers:', err)
       // No establecer error aquí para no interferir con el flujo principal
     }
-  }, [cleanupInactiveUsers, users, currentUser])
+  }, [users, currentUser])
 
   // Crear o obtener usuario
   const createOrGetUser = useCallback(async (username: string): Promise<User | null> => {
@@ -591,66 +605,72 @@ export const useChat = () => {
     initializeChat()
   }, [fetchMessages, fetchUsers])
 
-  // Limpieza periódica de usuarios inactivos
-  useEffect(() => {
-    // Ejecutar limpieza según configuración
-    const cleanupInterval = setInterval(() => {
-      console.log(SYSTEM_MESSAGES.PERIODIC_CLEANUP)
-      cleanupInactiveUsers()
-      fetchUsers() // Actualizar lista después de limpiar
-    }, USER_ACTIVITY_CONFIG.CLEANUP_INTERVAL)
-
-    return () => {
-      clearInterval(cleanupInterval)
-    }
-  }, [cleanupInactiveUsers, fetchUsers])
-
-  // Sistema de heartbeat para mantener usuario activo
+  // Sistema de actividad optimizado con throttling
   useEffect(() => {
     if (!currentUser) return
 
-    console.log('💓 Iniciando sistema de heartbeat para:', currentUser.username)
+    console.log('⚡ Iniciando sistema de actividad optimizado para:', currentUser.username)
+
+    let lastUpdateTime = 0
+    const THROTTLE_MS = 5000 // Actualizar máximo cada 5 segundos
 
     const updateLastSeen = async () => {
+      const now = Date.now()
+      if (now - lastUpdateTime < THROTTLE_MS) {
+        console.log('⏭️ Skip update - muy reciente para:', currentUser.username)
+        return
+      }
+      lastUpdateTime = now
+
       try {
-        await supabase
+        console.log('🔄 Actualizando last_seen para:', currentUser.username)
+        const { data, error } = await supabase
           .from('users')
           .update({ 
             last_seen: new Date().toISOString(),
             is_online: true 
           })
           .eq('id', currentUser.id)
+          .select()
         
-        console.log(SYSTEM_MESSAGES.HEARTBEAT_SENT(currentUser.username))
+        if (error) {
+          console.error('❌ Error updating last_seen:', error)
+        } else {
+          console.log('✅ Actividad actualizada exitosamente para:', currentUser.username, data)
+        }
       } catch (err) {
-        console.error('❌ Error updating last_seen:', err)
+        console.error('❌ Error general updating last_seen:', err)
       }
     }
 
-    // Actualizar según configuración de heartbeat
-    const heartbeatInterval = setInterval(updateLastSeen, USER_ACTIVITY_CONFIG.HEARTBEAT_INTERVAL)
-
-    // Actualizar en eventos de actividad del usuario
+    // Throttled activity handler
     const handleActivity = () => {
+      console.log('🎯 Evento de actividad detectado para:', currentUser.username)
       updateLastSeen()
     }
 
-    // Escuchar eventos de actividad del usuario
-    window.addEventListener('mousemove', handleActivity)
-    window.addEventListener('keydown', handleActivity)
-    window.addEventListener('click', handleActivity)
-    window.addEventListener('scroll', handleActivity)
-    window.addEventListener('touchstart', handleActivity)
+    // Solo eventos esenciales para reducir carga
+    window.addEventListener('keydown', handleActivity, { passive: true })
+    window.addEventListener('click', handleActivity, { passive: true })
+    window.addEventListener('focus', handleActivity, { passive: true })
+
+    // Actualización inicial
+    console.log('🚀 Actualización inicial para:', currentUser.username)
+    updateLastSeen()
+
+    // Heartbeat de seguridad cada 30 segundos
+    const heartbeatInterval = setInterval(() => {
+      console.log('💓 Heartbeat para:', currentUser.username)
+      updateLastSeen()
+    }, 30000)
 
     // Cleanup
     return () => {
-      console.log('🔴 Limpiando heartbeat para:', currentUser.username)
+      console.log('🔴 Limpiando sistema de actividad para:', currentUser.username)
       clearInterval(heartbeatInterval)
-      window.removeEventListener('mousemove', handleActivity)
       window.removeEventListener('keydown', handleActivity)
       window.removeEventListener('click', handleActivity)
-      window.removeEventListener('scroll', handleActivity)
-      window.removeEventListener('touchstart', handleActivity)
+      window.removeEventListener('focus', handleActivity)
     }
   }, [currentUser])
 

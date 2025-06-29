@@ -1,26 +1,23 @@
-// Configuración del sistema de usuarios online
+// Configuración del sistema de usuarios online en tiempo real
 export const USER_ACTIVITY_CONFIG = {
-  // Tiempo máximo de inactividad antes de marcar usuario como offline (5 minutos)
-  MAX_INACTIVE_TIME: 5 * 60 * 1000,
-  
-  // Intervalo de heartbeat para mantener usuario activo (30 segundos)
-  HEARTBEAT_INTERVAL: 30 * 1000,
-  
-  // Intervalo de limpieza automática de usuarios inactivos (2 minutos)
-  CLEANUP_INTERVAL: 2 * 60 * 1000,
+  // Tiempo máximo de inactividad antes de marcar usuario como offline (2 minutos - más agresivo)
+  MAX_INACTIVE_TIME: 2 * 60 * 1000,
   
   // Duración de notificaciones de conexión/desconexión (3 segundos)
   NOTIFICATION_DURATION: 3 * 1000,
   
   // Lista de usuarios IA que siempre deben permanecer online
-  AI_USERS: ['NEO', 'LATAMARA', 'BARRILINTER']
+  AI_USERS: ['NEO', 'LATAMARA', 'BARRILINTER'],
+  
+  // Debounce para eventos de actividad (100ms)
+  ACTIVITY_DEBOUNCE: 100
 } as const
 
 // Mensajes del sistema
 export const SYSTEM_MESSAGES = {
   USER_CONNECTED: (username: string) => `🟢 ${username} se conectó`,
   USER_DISCONNECTED: (username: string) => `🔴 ${username} se desconectó`,
-  HEARTBEAT_SENT: (username: string) => `💓 Heartbeat enviado para: ${username}`,
-  CLEANUP_COMPLETED: '🧹 Limpieza de usuarios inactivos completada',
-  PERIODIC_CLEANUP: '🕒 Ejecutando limpieza periódica de usuarios inactivos...'
+  ACTIVITY_UPDATED: (username: string) => `⚡ Actividad actualizada para: ${username}`,
+  REALTIME_CONNECTED: '⚡ Sistema en tiempo real conectado',
+  REALTIME_ERROR: '❌ Error en sistema en tiempo real'
 } as const 

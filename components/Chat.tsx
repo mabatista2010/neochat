@@ -67,11 +67,6 @@ const Chat: React.FC<ChatProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Scroll automático al final
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
   // Cursor parpadeante
   useEffect(() => {
     const interval = setInterval(() => {
@@ -103,6 +98,9 @@ const Chat: React.FC<ChatProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setInputMessage('')
     }
   }
 
@@ -126,8 +124,6 @@ const Chat: React.FC<ChatProps> = ({
   const closeSidebar = () => {
     setIsSidebarOpen(false)
   }
-
-
 
   // Obtener información del agente
   const getAgentInfo = (username: string) => {
