@@ -160,6 +160,27 @@ export const useChat = () => {
     }
   }, [])
 
+  // Función para obtener ID de usuario BARRILINTER
+  const getBarrilinterUserId = useCallback(async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', 'BARRILINTER')
+        .single()
+
+      if (error || !data) {
+        console.error('Error getting BARRILINTER user ID:', error)
+        return null
+      }
+
+      return data.id
+    } catch (err) {
+      console.error('Error in getBarrilinterUserId:', err)
+      return null
+    }
+  }, [])
+
   // Función para invocar a NEO
   const invokeNEO = useCallback(async (userMessage: string, roomId: string) => {
     try {
@@ -298,6 +319,75 @@ export const useChat = () => {
     }
   }, [currentUser, messages, getLatamaraUserId])
 
+  // Función para invocar a BARRILINTER
+  const invokeBarrilinter = useCallback(async (userMessage: string, roomId: string) => {
+    try {
+      console.log('Invocando a BARRILINTER con:', userMessage)
+      
+      const response = await fetch('/api/barrilinter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          chatContext: messages,
+          username: currentUser?.username || 'Anónimo'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al comunicarse con BARRILINTER')
+      }
+
+      // Obtener ID de usuario BARRILINTER
+      const barrilinterUserId = await getBarrilinterUserId()
+      
+      if (!barrilinterUserId) {
+        throw new Error('No se pudo obtener el ID de usuario BARRILINTER')
+      }
+
+      // Insertar respuesta de BARRILINTER en la base de datos
+      const { error: barrilinterError } = await supabase
+        .from('messages')
+        .insert({
+          content: data.message,
+          user_id: barrilinterUserId,
+          room_id: roomId,
+          message_type: 'ai'
+        })
+
+      if (barrilinterError) {
+        console.error('Error inserting BARRILINTER message:', barrilinterError)
+        throw barrilinterError
+      }
+
+      console.log('BARRILINTER respondió exitosamente')
+    } catch (err) {
+      console.error('Error invoking BARRILINTER:', err)
+      setError('Error al invocar a BARRILINTER. Verifica tu conexión.')
+      
+      // Intentar insertar mensaje de error
+      try {
+        const barrilinterUserId = await getBarrilinterUserId()
+        if (barrilinterUserId) {
+          await supabase
+            .from('messages')
+            .insert({
+              content: 'Joder chaval, que se me ha cascado el sistema y no puedo contestar. Como diría Murphy en su ley: "Si algo puede salir mal, saldrá mal". Inténtalo otra vez.',
+              user_id: barrilinterUserId,
+              room_id: roomId,
+              message_type: 'ai'
+            })
+        }
+      } catch (errorInsertError) {
+        console.error('Error inserting error message:', errorInsertError)
+      }
+    }
+  }, [currentUser, messages, getBarrilinterUserId])
+
   // Enviar mensaje
   const sendMessage = useCallback(async (content: string) => {
     if (!currentUser || !content.trim()) return
@@ -349,13 +439,24 @@ export const useChat = () => {
             invokeLatamara(latamaraMessage, room.id)
           }, 800) // Un poco más de delay para diferenciarlo de NEO
         }
+      } else if (trimmedContent.startsWith('@barrilinter ')) {
+        const barrilinterMessage = content.trim().substring(13) // Remover "@barrilinter "
+        
+        if (barrilinterMessage.length > 0) {
+          console.log('Mensaje para BARRILINTER detectado:', barrilinterMessage)
+          
+          // Delay diferente para cada IA
+          setTimeout(() => {
+            invokeBarrilinter(barrilinterMessage, room.id)
+          }, 1000) // Mayor delay para diferenciarlo
+        }
       }
       
     } catch (err) {
       console.error('Error sending message:', err)
       setError('Error al enviar mensaje')
     }
-  }, [currentUser, invokeNEO, invokeLatamara])
+  }, [currentUser, invokeNEO, invokeLatamara, invokeBarrilinter])
 
   // Configurar subscripciones en tiempo real
   useEffect(() => {

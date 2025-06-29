@@ -206,7 +206,7 @@ const Chat: React.FC<ChatProps> = ({
             
                          {/* Info IA - oculta en móvil pequeño */}
              <div className="hidden sm:block text-xs text-green-600 flex-shrink-0">
-               {'>'} IA: @neo (futuro) | @latamara (barrio)
+               {'>'} IA: @neo (futuro) | @latamara (barrio) | @barrilinter (culto)
              </div>
           </div>
         </div>
@@ -223,7 +223,8 @@ const Chat: React.FC<ChatProps> = ({
               // Determinar qué IA es basándose en el username con debug
               const isNeo = message.message_type === 'ai' && (message.username === 'NEO' || message.username?.includes('NEO'))
               const isLatamara = message.message_type === 'ai' && (message.username === 'LATAMARA' || message.username?.includes('LATAMARA'))
-              const isAI = isNeo || isLatamara
+              const isBarrilinter = message.message_type === 'ai' && (message.username === 'BARRILINTER' || message.username?.includes('BARRILINTER'))
+              const isAI = isNeo || isLatamara || isBarrilinter
               
               // Debug para identificar el problema
               if (message.message_type === 'ai') {
@@ -232,6 +233,7 @@ const Chat: React.FC<ChatProps> = ({
                   username: message.username,
                   isNeo,
                   isLatamara,
+                  isBarrilinter,
                   content: message.content.substring(0, 50) + '...'
                 })
               }
@@ -243,6 +245,8 @@ const Chat: React.FC<ChatProps> = ({
                       ? 'bg-cyan-950 bg-opacity-20 p-2 rounded border-l-2 border-cyan-400'
                       : isLatamara
                       ? 'bg-pink-950 bg-opacity-20 p-2 rounded border-l-2 border-pink-400'
+                      : isBarrilinter
+                      ? 'bg-orange-950 bg-opacity-20 p-2 rounded border-l-2 border-orange-400'
                       : ''
                   }`}>
                     {/* Timestamp - más pequeño en móvil */}
@@ -253,11 +257,11 @@ const Chat: React.FC<ChatProps> = ({
                     {/* Username - adaptativo con indicador de IA */}
                     <span 
                       className={`font-semibold text-sm md:text-base min-w-[80px] md:min-w-[100px] flex-shrink-0 ${
-                        isNeo ? 'text-cyan-400' : isLatamara ? 'text-pink-400' : ''
+                        isNeo ? 'text-cyan-400' : isLatamara ? 'text-pink-400' : isBarrilinter ? 'text-orange-400' : ''
                       }`}
                       style={!isAI ? getUsernameColor(message.avatar_color) : undefined}
                     >
-                      {isNeo ? '🤖 NEO' : isLatamara ? '👱‍♀️ LATAMARA' : (
+                      {isNeo ? '🤖 NEO' : isLatamara ? '👱‍♀️ LATAMARA' : isBarrilinter ? '🎓 BARRILINTER' : (
                         <>
                           {/* Versión móvil truncada */}
                           <span className="md:hidden">
@@ -277,6 +281,8 @@ const Chat: React.FC<ChatProps> = ({
                         ? 'text-cyan-300 italic' 
                         : isLatamara
                         ? 'text-pink-300 font-normal'
+                        : isBarrilinter
+                        ? 'text-orange-300 italic'
                         : 'text-green-400'
                     }`}>
                       {message.content}
@@ -292,6 +298,11 @@ const Chat: React.FC<ChatProps> = ({
                   {isLatamara && (
                     <div className="text-xs text-pink-600 mt-1 ml-16 md:ml-20">
                       {'>'} Respuesta desde el barrio de Vallecas
+                    </div>
+                  )}
+                  {isBarrilinter && (
+                    <div className="text-xs text-orange-600 mt-1 ml-16 md:ml-20">
+                      {'>'} Sabiduría de barrio con acceso a internet
                     </div>
                   )}
                 </div>
@@ -356,6 +367,9 @@ const Chat: React.FC<ChatProps> = ({
              </div>
              <div className="text-pink-600">
                {'>'} Escribe &quot;@latamara [mensaje]&quot; para la choni del barrio
+             </div>
+             <div className="text-orange-600">
+               {'>'} Escribe &quot;@barrilinter [mensaje]&quot; para el culto de barrio
              </div>
            </div>
         </div>
