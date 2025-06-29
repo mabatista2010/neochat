@@ -220,10 +220,21 @@ const Chat: React.FC<ChatProps> = ({
             </div>
           ) : (
             messages.map((message) => {
-              // Determinar qué IA es basándose en el username
-              const isNeo = message.message_type === 'ai' && message.username === 'NEO'
-              const isLatamara = message.message_type === 'ai' && message.username === 'LATAMARA'
+              // Determinar qué IA es basándose en el username con debug
+              const isNeo = message.message_type === 'ai' && (message.username === 'NEO' || message.username?.includes('NEO'))
+              const isLatamara = message.message_type === 'ai' && (message.username === 'LATAMARA' || message.username?.includes('LATAMARA'))
               const isAI = isNeo || isLatamara
+              
+              // Debug para identificar el problema
+              if (message.message_type === 'ai') {
+                console.log('🤖 Mensaje IA detectado:', {
+                  id: message.id,
+                  username: message.username,
+                  isNeo,
+                  isLatamara,
+                  content: message.content.substring(0, 50) + '...'
+                })
+              }
               
               return (
                 <div key={message.id} className={`group ${isAI ? 'ai-message' : ''}`}>
