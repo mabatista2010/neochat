@@ -9,6 +9,7 @@ interface ChatProps {
   currentUser: User
   onSendMessage: (message: string) => void
   onLogout: () => void
+  onlineNotification?: string | null
 }
 
 // Definición de agentes para escalabilidad
@@ -56,7 +57,8 @@ const Chat: React.FC<ChatProps> = ({
   users, 
   currentUser, 
   onSendMessage, 
-  onLogout 
+  onLogout,
+  onlineNotification 
 }) => {
   const [inputMessage, setInputMessage] = useState('')
   const [showCursor, setShowCursor] = useState(true)
@@ -125,13 +127,7 @@ const Chat: React.FC<ChatProps> = ({
     setIsSidebarOpen(false)
   }
 
-  // Función para truncar nombres de usuario SOLO en el chat
-  const truncateUsernameForMobileChat = (username: string) => {
-    if (window.innerWidth < 768 && username.length > 6) {
-      return username.substring(0, 6) + '...'
-    }
-    return username
-  }
+
 
   // Obtener información del agente
   const getAgentInfo = (username: string) => {
@@ -337,6 +333,15 @@ const Chat: React.FC<ChatProps> = ({
              </div>
           </div>
         </div>
+
+        {/* Notificación de conexión/desconexión */}
+        {onlineNotification && (
+          <div className="bg-green-950 bg-opacity-20 border border-green-500 border-opacity-30 m-4 mb-0 p-3 rounded-lg flex items-center space-x-2 animate-pulse">
+            <div className="text-green-400 text-sm font-mono">
+              {onlineNotification}
+            </div>
+          </div>
+        )}
 
         {/* Área de mensajes */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3">

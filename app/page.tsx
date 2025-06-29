@@ -14,6 +14,7 @@ export default function Home() {
     currentUser,
     loading,
     error,
+    onlineNotification,
     createOrGetUser,
     sendMessage,
     setCurrentUser
@@ -83,6 +84,7 @@ export default function Home() {
       currentUser={currentUser}
       onSendMessage={sendMessage}
       onLogout={handleLogout}
+      onlineNotification={onlineNotification}
     />
   )
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, MessageWithUser, User } from '@/lib/supabase'
+import { USER_ACTIVITY_CONFIG, SYSTEM_MESSAGES } from '@/lib/constants'
 
 export const useChat = () => {
   const [messages, setMessages] = useState<MessageWithUser[]>([])
@@ -7,6 +8,7 @@ export const useChat = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [onlineNotification, setOnlineNotification] = useState<string | null>(null)
 
   // Obtener mensajes iniciales
   const fetchMessages = useCallback(async () => {
@@ -30,13 +32,43 @@ export const useChat = () => {
     }
   }, [])
 
-  // Obtener usuarios online
+  // Limpiar usuarios inactivos (función auxiliar)
+  const cleanupInactiveUsers = useCallback(async () => {
+    try {
+      // Marcar como offline usuarios que no han estado activos según configuración
+      const inactiveThreshold = new Date(Date.now() - USER_ACTIVITY_CONFIG.MAX_INACTIVE_TIME).toISOString()
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ is_online: false })
+        .eq('is_online', true)
+        .lt('last_seen', inactiveThreshold)
+        .not('username', 'in', `(${USER_ACTIVITY_CONFIG.AI_USERS.join(',')})`)
+      
+      if (error) {
+        console.error('Error cleaning up inactive users:', error)
+      } else {
+        console.log(SYSTEM_MESSAGES.CLEANUP_COMPLETED)
+      }
+    } catch (err) {
+      console.error('Error in cleanup:', err)
+    }
+  }, [])
+
+  // Obtener usuarios online (versión mejorada con filtro de tiempo)
   const fetchUsers = useCallback(async () => {
     try {
+      // Primero limpiar usuarios inactivos
+      await cleanupInactiveUsers()
+      
+      // Obtener solo usuarios que han estado activos según configuración
+      const activeThreshold = new Date(Date.now() - USER_ACTIVITY_CONFIG.MAX_INACTIVE_TIME).toISOString()
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('is_online', true)
+        .gte('last_seen', activeThreshold)
         .order('username')
 
       if (error) {
@@ -44,13 +76,42 @@ export const useChat = () => {
         throw error
       }
       
-      console.log('Users fetched successfully:', data?.length || 0)
+      // Detectar cambios en usuarios para notificaciones
+      if (data && currentUser) {
+        const newUsers = data.filter(user => user.username !== currentUser.username)
+        const currentUsernames = users
+          .filter(user => user.username !== currentUser.username)
+          .map(user => user.username)
+        const newUsernames = newUsers.map(user => user.username)
+        
+        // Detectar usuarios que se conectaron
+        const justConnected = newUsernames.filter(username => !currentUsernames.includes(username))
+                 if (justConnected.length > 0) {
+           justConnected.forEach(username => {
+             console.log(SYSTEM_MESSAGES.USER_CONNECTED(username))
+             setOnlineNotification(SYSTEM_MESSAGES.USER_CONNECTED(username))
+             setTimeout(() => setOnlineNotification(null), USER_ACTIVITY_CONFIG.NOTIFICATION_DURATION)
+           })
+         }
+         
+         // Detectar usuarios que se desconectaron
+         const justDisconnected = currentUsernames.filter(username => !newUsernames.includes(username))
+         if (justDisconnected.length > 0) {
+           justDisconnected.forEach(username => {
+             console.log(SYSTEM_MESSAGES.USER_DISCONNECTED(username))
+             setOnlineNotification(SYSTEM_MESSAGES.USER_DISCONNECTED(username))
+             setTimeout(() => setOnlineNotification(null), USER_ACTIVITY_CONFIG.NOTIFICATION_DURATION)
+           })
+         }
+      }
+      
+      console.log('🟢 Usuarios online activos:', data?.length || 0)
       setUsers(data || [])
     } catch (err) {
       console.error('Error fetching users:', err)
       // No establecer error aquí para no interferir con el flujo principal
     }
-  }, [])
+  }, [cleanupInactiveUsers, users, currentUser])
 
   // Crear o obtener usuario
   const createOrGetUser = useCallback(async (username: string): Promise<User | null> => {
@@ -530,16 +591,153 @@ export const useChat = () => {
     initializeChat()
   }, [fetchMessages, fetchUsers])
 
-  // Limpiar al desmontar
+  // Limpieza periódica de usuarios inactivos
   useEffect(() => {
+    // Ejecutar limpieza según configuración
+    const cleanupInterval = setInterval(() => {
+      console.log(SYSTEM_MESSAGES.PERIODIC_CLEANUP)
+      cleanupInactiveUsers()
+      fetchUsers() // Actualizar lista después de limpiar
+    }, USER_ACTIVITY_CONFIG.CLEANUP_INTERVAL)
+
     return () => {
-      if (currentUser) {
-        supabase
+      clearInterval(cleanupInterval)
+    }
+  }, [cleanupInactiveUsers, fetchUsers])
+
+  // Sistema de heartbeat para mantener usuario activo
+  useEffect(() => {
+    if (!currentUser) return
+
+    console.log('💓 Iniciando sistema de heartbeat para:', currentUser.username)
+
+    const updateLastSeen = async () => {
+      try {
+        await supabase
           .from('users')
-          .update({ is_online: false })
+          .update({ 
+            last_seen: new Date().toISOString(),
+            is_online: true 
+          })
           .eq('id', currentUser.id)
-          .then()
+        
+        console.log(SYSTEM_MESSAGES.HEARTBEAT_SENT(currentUser.username))
+      } catch (err) {
+        console.error('❌ Error updating last_seen:', err)
       }
+    }
+
+    // Actualizar según configuración de heartbeat
+    const heartbeatInterval = setInterval(updateLastSeen, USER_ACTIVITY_CONFIG.HEARTBEAT_INTERVAL)
+
+    // Actualizar en eventos de actividad del usuario
+    const handleActivity = () => {
+      updateLastSeen()
+    }
+
+    // Escuchar eventos de actividad del usuario
+    window.addEventListener('mousemove', handleActivity)
+    window.addEventListener('keydown', handleActivity)
+    window.addEventListener('click', handleActivity)
+    window.addEventListener('scroll', handleActivity)
+    window.addEventListener('touchstart', handleActivity)
+
+    // Cleanup
+    return () => {
+      console.log('🔴 Limpiando heartbeat para:', currentUser.username)
+      clearInterval(heartbeatInterval)
+      window.removeEventListener('mousemove', handleActivity)
+      window.removeEventListener('keydown', handleActivity)
+      window.removeEventListener('click', handleActivity)
+      window.removeEventListener('scroll', handleActivity)
+      window.removeEventListener('touchstart', handleActivity)
+    }
+  }, [currentUser])
+
+  // Mejorar la lógica de desconexión para eventos del navegador
+  useEffect(() => {
+    if (!currentUser) return
+
+    console.log('🔌 Configurando eventos de desconexión para:', currentUser.username)
+
+    const handleBeforeUnload = () => {
+      console.log('🚪 Usuario cerrando ventana/pestaña:', currentUser.username)
+      
+      // Usar sendBeacon para envío confiable al cerrar ventana
+      const data = new FormData()
+      data.append('userId', currentUser.id)
+      
+      try {
+        navigator.sendBeacon('/api/user/offline', data)
+      } catch (err) {
+        console.error('Error con sendBeacon:', err)
+        // Fallback con fetch síncrono
+        fetch('/api/user/offline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id }),
+          keepalive: true
+        }).catch(e => console.error('Error fallback:', e))
+      }
+    }
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'hidden') {
+        console.log('👁️ Usuario cambió de pestaña/minimizó:', currentUser.username)
+        // Usuario cambió de pestaña o minimizó ventana
+        try {
+          await supabase
+            .from('users')
+            .update({ is_online: false })
+            .eq('id', currentUser.id)
+          console.log('✅ Usuario marcado offline por visibilidad')
+        } catch (err) {
+          console.error('❌ Error marcando offline:', err)
+        }
+      } else if (document.visibilityState === 'visible') {
+        console.log('👁️ Usuario regresó a la pestaña:', currentUser.username)
+        // Usuario regresó a la pestaña
+        try {
+          await supabase
+            .from('users')
+            .update({ 
+              is_online: true,
+              last_seen: new Date().toISOString()
+            })
+            .eq('id', currentUser.id)
+          console.log('✅ Usuario marcado online por visibilidad')
+        } catch (err) {
+          console.error('❌ Error marcando online:', err)
+        }
+      }
+    }
+
+    // Eventos del navegador
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('unload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      console.log('🧹 Limpiando eventos de desconexión para:', currentUser.username)
+      
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('unload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      
+      // Marcar como offline al limpiar
+      const markOfflineOnCleanup = async () => {
+        try {
+          await supabase
+            .from('users')
+            .update({ is_online: false })
+            .eq('id', currentUser.id)
+          console.log('✅ Usuario marcado offline al desmontar')
+        } catch (err) {
+          console.error('❌ Error marcando offline al desmontar:', err)
+        }
+      }
+      
+      markOfflineOnCleanup()
     }
   }, [currentUser])
 
@@ -549,8 +747,10 @@ export const useChat = () => {
     currentUser,
     loading,
     error,
+    onlineNotification,
     createOrGetUser,
     sendMessage,
-    setCurrentUser
+    setCurrentUser,
+    cleanupInactiveUsers
   }
 } 
