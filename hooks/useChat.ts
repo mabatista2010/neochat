@@ -15,7 +15,6 @@ export const useChat = () => {
         .from('messages_with_user')
         .select('*')
         .order('created_at', { ascending: true })
-        .limit(100)
 
       if (error) {
         console.error('Error fetching messages:', error)
