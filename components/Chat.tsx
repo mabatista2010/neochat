@@ -11,6 +11,46 @@ interface ChatProps {
   onLogout: () => void
 }
 
+// Definición de agentes para escalabilidad
+const AI_AGENTS = [
+  {
+    id: 'neo',
+    name: 'NEO',
+    icon: '🤖',
+    color: '#00ffff',
+    bgColor: 'bg-cyan-950',
+    textColor: 'text-cyan-400',
+    borderColor: 'border-cyan-400',
+    description: 'IA del futuro (2157)',
+    usage: '@neo [mensaje]',
+    specialty: 'Análisis temporal y tecnología avanzada'
+  },
+  {
+    id: 'latamara',
+    name: 'LATAMARA', 
+    icon: '👱‍♀️',
+    color: '#ff69b4',
+    bgColor: 'bg-pink-950',
+    textColor: 'text-pink-400',
+    borderColor: 'border-pink-400',
+    description: 'Choni del barrio de Vallecas',
+    usage: '@latamara [mensaje]',
+    specialty: 'Diversión y datos "únicos"'
+  },
+  {
+    id: 'barrilinter',
+    name: 'BARRILINTER',
+    icon: '🎓', 
+    color: '#ff8c00',
+    bgColor: 'bg-orange-950',
+    textColor: 'text-orange-400',
+    borderColor: 'border-orange-400',
+    description: 'Erudito de barrio con internet',
+    usage: '@barrilinter [mensaje]',
+    specialty: 'Sabiduría accesible + info en tiempo real'
+  }
+]
+
 const Chat: React.FC<ChatProps> = ({ 
   messages, 
   users, 
@@ -21,6 +61,7 @@ const Chat: React.FC<ChatProps> = ({
   const [inputMessage, setInputMessage] = useState('')
   const [showCursor, setShowCursor] = useState(true)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'users' | 'agents'>('users')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -84,12 +125,17 @@ const Chat: React.FC<ChatProps> = ({
     setIsSidebarOpen(false)
   }
 
-  // Función para truncar nombres de usuario en móvil
-  const truncateUsernameForMobile = (username: string) => {
-    if (username.length > 6) {
+  // Función para truncar nombres de usuario SOLO en el chat
+  const truncateUsernameForMobileChat = (username: string) => {
+    if (window.innerWidth < 768 && username.length > 6) {
       return username.substring(0, 6) + '...'
     }
     return username
+  }
+
+  // Obtener información del agente
+  const getAgentInfo = (username: string) => {
+    return AI_AGENTS.find(agent => username?.includes(agent.name))
   }
 
   return (
@@ -102,69 +148,157 @@ const Chat: React.FC<ChatProps> = ({
         />
       )}
 
-      {/* Panel lateral de usuarios */}
+      {/* Panel lateral mejorado */}
       <div className={`
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         fixed md:relative md:translate-x-0
-        w-72 md:w-64 h-full
-        bg-gray-950 border-r border-green-500 
+        w-80 md:w-72 h-full
+        bg-gradient-to-b from-gray-950 to-gray-900 border-r border-green-500 
         transition-transform duration-300 ease-in-out
         z-50 md:z-auto
         overflow-y-auto
+        shadow-2xl md:shadow-none
       `}>
-        <div className="p-3 md:p-4">
-          {/* Header del sidebar con botón cerrar en móvil */}
+        <div className="p-4">
+          {/* Header del sidebar con tabs */}
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-green-500 text-sm md:text-base mb-1">{'>'} USUARIOS ONLINE</h2>
-              <div className="text-xs text-green-600">
-                {users.length} conectado{users.length !== 1 ? 's' : ''}
+            <div className="flex-1">
+              <h2 className="text-green-500 text-base font-bold mb-2">INTELICHAT</h2>
+              
+              {/* Tabs para navegar entre usuarios y agentes */}
+              <div className="flex bg-gray-800 rounded-lg p-1 mb-3">
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`flex-1 py-2 px-3 text-xs rounded-md transition-all ${
+                    activeTab === 'users'
+                      ? 'bg-green-600 text-black font-semibold'
+                      : 'text-green-400 hover:text-green-300'
+                  }`}
+                >
+                  👥 USUARIOS ({users.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('agents')}
+                  className={`flex-1 py-2 px-3 text-xs rounded-md transition-all ${
+                    activeTab === 'agents'
+                      ? 'bg-green-600 text-black font-semibold'
+                      : 'text-green-400 hover:text-green-300'
+                  }`}
+                >
+                  🤖 AGENTES IA ({AI_AGENTS.length})
+                </button>
               </div>
             </div>
             <button
               onClick={closeSidebar}
-              className="md:hidden text-green-500 hover:text-green-400 p-1"
+              className="md:hidden text-green-500 hover:text-green-400 p-2 hover:bg-green-950 rounded-lg transition-colors"
             >
               ✕
             </button>
           </div>
           
-          {/* Lista de usuarios */}
-          <div className="space-y-2 mb-6">
+          {/* Contenido según tab activo */}
+          {activeTab === 'users' && (
+            <div className="space-y-3">
+              <div className="text-xs text-green-600 border-b border-green-800 pb-2">
+                {'>'} USUARIOS CONECTADOS
+              </div>
+              
+              {/* Lista de usuarios - SIN truncar nombres */}
+              <div className="space-y-2">
             {users.map((user) => (
-              <div key={user.id} className="flex items-center space-x-2 p-1">
+                  <div key={user.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-800 transition-colors">
                 <div 
-                  className="w-2 h-2 rounded-full animate-pulse flex-shrink-0"
-                  style={{ backgroundColor: user.avatar_color }}
+                      className="w-3 h-3 rounded-full animate-pulse flex-shrink-0 shadow-lg"
+                      style={{ 
+                        backgroundColor: user.avatar_color,
+                        boxShadow: `0 0 8px ${user.avatar_color}50`
+                      }}
                 />
-                <span 
-                  className={`text-sm flex-1 ${
+                    <div className="flex-1 min-w-0">
+                      <div 
+                        className={`text-sm font-medium ${
                     user.id === currentUser.id ? 'font-bold' : ''
                   }`}
                   style={getUsernameColor(user.avatar_color)}
                 >
-                  {/* Versión móvil truncada */}
-                  <span className="md:hidden">
-                    {truncateUsernameForMobile(user.username)}
-                    {user.id === currentUser.id && ' (tú)'}
-                  </span>
-                  {/* Versión desktop completa */}
-                  <span className="hidden md:inline truncate">
                     {user.username}
-                    {user.id === currentUser.id && ' (tú)'}
-                  </span>
-                </span>
+                        {user.id === currentUser.id && (
+                          <span className="text-green-600 text-xs ml-2">(tú)</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-green-700">
+                        Conectado
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'agents' && (
+            <div className="space-y-4">
+              <div className="text-xs text-green-600 border-b border-green-800 pb-2">
+                {'>'} AGENTES IA DISPONIBLES
+              </div>
+              
+              {/* Lista de agentes escalable */}
+              <div className="space-y-3">
+                {AI_AGENTS.map((agent) => (
+                  <div key={agent.id} className={`
+                    ${agent.bgColor} bg-opacity-10 border ${agent.borderColor} border-opacity-30 
+                    rounded-lg p-3 hover:bg-opacity-20 transition-all duration-200
+                    cursor-pointer hover:border-opacity-50
+                  `}>
+                    <div className="flex items-center space-x-3 mb-2">
+                      <span className="text-lg">{agent.icon}</span>
+                      <div className="flex-1">
+                        <div className={`font-bold text-sm ${agent.textColor}`}>
+                          {agent.name}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {agent.description}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1 ml-8">
+                      <div className="text-xs text-green-600">
+                        <span className="font-mono bg-gray-900 px-2 py-1 rounded">
+                          {agent.usage}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {agent.specialty}
+                      </div>
+                    </div>
               </div>
             ))}
           </div>
 
-          {/* Botón desconectar */}
-          <div className="mt-auto pt-4 border-t border-green-800">
+              {/* Consejos de uso */}
+              <div className="bg-green-950 bg-opacity-20 border border-green-600 border-opacity-30 rounded-lg p-3 mt-4">
+                <div className="text-xs text-green-400 font-semibold mb-2">
+                  💡 CONSEJOS DE USO
+                </div>
+                <div className="text-xs text-green-600 space-y-1">
+                  <div>• Escribe el comando completo con tu pregunta</div>
+                  <div>• Cada IA tiene personalidad única</div>
+                  <div>• Las respuestas aparecen en el chat principal</div>
+                  <div>• Puedes conversar con varias IAs seguidas</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Botón desconectar mejorado */}
+          <div className="mt-6 pt-4 border-t border-green-800">
             <button
               onClick={onLogout}
-              className="w-full text-left text-xs md:text-sm text-green-600 hover:text-green-400 transition-colors p-2 rounded hover:bg-green-950"
+              className="w-full text-left text-sm text-red-400 hover:text-red-300 transition-colors p-3 rounded-lg hover:bg-red-950 hover:bg-opacity-20 border border-red-800 border-opacity-30 hover:border-opacity-50"
             >
-              {'>'} Desconectar
+              <span className="font-mono">{'>'}</span> Desconectar sesión
             </button>
           </div>
         </div>
@@ -172,14 +306,14 @@ const Chat: React.FC<ChatProps> = ({
 
       {/* Panel principal del chat */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="bg-gray-950 border-b border-green-500 p-3 md:p-4">
+        {/* Header simplificado */}
+        <div className="bg-gradient-to-r from-gray-950 to-gray-900 border-b border-green-500 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 min-w-0 flex-1">
-              {/* Botón hamburguesa para móvil */}
+              {/* Botón hamburguesa mejorado para móvil */}
               <button
                 onClick={toggleSidebar}
-                className="md:hidden text-green-500 hover:text-green-400 p-1 flex-shrink-0"
+                className="md:hidden text-green-500 hover:text-green-400 p-2 hover:bg-green-950 rounded-lg transition-colors flex-shrink-0"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -187,112 +321,107 @@ const Chat: React.FC<ChatProps> = ({
               </button>
               
               <div className="min-w-0 flex-1">
-                <h1 className="text-green-500 font-bold text-sm md:text-base truncate">
-                  INTELICHAT - SALA GENERAL
+                <h1 className="text-green-500 font-bold text-base md:text-lg">
+                  SALA GENERAL
                 </h1>
                 <div className="text-xs text-green-600 mt-1">
-                  {'>'} Conectado como{' '}
-                  {/* Versión móvil truncada */}
-                  <span className="md:hidden">
-                    {truncateUsernameForMobile(currentUser.username)}
-                  </span>
-                  {/* Versión desktop completa */}
-                  <span className="hidden md:inline">
-                    {currentUser.username}
-                  </span>
+                  {'>'} {currentUser.username} • {users.length} usuario{users.length !== 1 ? 's' : ''} • {AI_AGENTS.length} IA{AI_AGENTS.length !== 1 ? 's' : ''}
                 </div>
               </div>
             </div>
             
-                         {/* Info IA - oculta en móvil pequeño */}
-             <div className="hidden sm:block text-xs text-green-600 flex-shrink-0">
-               {'>'} IA: @neo (futuro) | @latamara (barrio) | @barrilinter (culto)
+            {/* Status indicator */}
+            <div className="hidden sm:flex items-center space-x-2 text-xs text-green-600">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>CONECTADO</span>
              </div>
           </div>
         </div>
 
         {/* Área de mensajes */}
-        <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3">
           {messages.length === 0 ? (
             <div className="text-center text-green-600 mt-8">
-              <div className="text-sm md:text-base">{'>'} No hay mensajes aún</div>
-              <div className="text-xs md:text-sm mt-2">Sé el primero en escribir algo...</div>
+              <div className="text-lg">{'>'} CHAT VACÍO</div>
+              <div className="text-sm mt-2 text-green-700">Sé el primero en escribir algo...</div>
+              <div className="text-xs mt-4 text-green-800">
+                💡 Prueba con <span className="font-mono bg-gray-900 px-2 py-1 rounded">@neo hola</span>
+              </div>
             </div>
           ) : (
             messages.map((message) => {
-              // Determinar qué IA es basándose en el username con debug
-              const isNeo = message.message_type === 'ai' && (message.username === 'NEO' || message.username?.includes('NEO'))
-              const isLatamara = message.message_type === 'ai' && (message.username === 'LATAMARA' || message.username?.includes('LATAMARA'))
-              const isBarrilinter = message.message_type === 'ai' && (message.username === 'BARRILINTER' || message.username?.includes('BARRILINTER'))
-              const isAI = isNeo || isLatamara || isBarrilinter
-              
-              // Debug eliminado para evitar spam en consola
+              const agentInfo = getAgentInfo(message.username)
+              const isAI = !!agentInfo
               
               return (
-                <div key={message.id} className={`group ${isAI ? 'ai-message' : ''}`}>
-                  <div className={`flex items-start space-x-2 md:space-x-3 ${
-                    isNeo 
-                      ? 'bg-cyan-950 bg-opacity-20 p-2 rounded border-l-2 border-cyan-400'
-                      : isLatamara
-                      ? 'bg-pink-950 bg-opacity-20 p-2 rounded border-l-2 border-pink-400'
-                      : isBarrilinter
-                      ? 'bg-orange-950 bg-opacity-20 p-2 rounded border-l-2 border-orange-400'
-                      : ''
+                <div key={message.id} className={`group ${isAI ? 'ai-message' : ''} w-full overflow-hidden`}>
+                  <div className={`w-full ${
+                    agentInfo 
+                      ? `${agentInfo.bgColor} bg-opacity-10 p-3 rounded-lg border-l-4 ${agentInfo.borderColor} border-opacity-50`
+                      : 'p-2'
                   }`}>
-                    {/* Timestamp - más pequeño en móvil */}
-                    <span className="text-xs text-green-600 min-w-[45px] md:min-w-[50px] flex-shrink-0">
+                    
+                    {/* Diseño Desktop: horizontal */}
+                    <div className="hidden md:flex items-start space-x-3 w-full">
+                      {/* Timestamp */}
+                      <span className="text-xs text-green-600 min-w-[50px] flex-shrink-0 font-mono">
                       [{formatTimestamp(message.created_at)}]
                     </span>
                     
-                    {/* Username - adaptativo con indicador de IA */}
+                      {/* Username */}
                     <span 
-                      className={`font-semibold text-sm md:text-base min-w-[80px] md:min-w-[100px] flex-shrink-0 ${
-                        isNeo ? 'text-cyan-400' : isLatamara ? 'text-pink-400' : isBarrilinter ? 'text-orange-400' : ''
+                        className={`font-semibold text-sm min-w-[100px] flex-shrink-0 ${
+                          agentInfo ? agentInfo.textColor : ''
                       }`}
                       style={!isAI ? getUsernameColor(message.avatar_color) : undefined}
                     >
-                      {isNeo ? '🤖 NEO' : isLatamara ? '👱‍♀️ LATAMARA' : isBarrilinter ? '🎓 BARRILINTER' : (
-                        <>
-                          {/* Versión móvil truncada */}
-                          <span className="md:hidden">
-                            {truncateUsernameForMobile(message.username)}
+                        {agentInfo ? `${agentInfo.icon} ${agentInfo.name}` : message.username}:
                           </span>
-                          {/* Versión desktop completa */}
-                          <span className="hidden md:inline">
-                            {message.username}
+                      
+                      {/* Mensaje */}
+                      <div className={`flex-1 break-words text-sm ${
+                        agentInfo 
+                          ? `${agentInfo.textColor} opacity-90` 
+                          : 'text-green-400'
+                      } min-w-0`}>
+                        {message.content}
+                      </div>
+                    </div>
+
+                    {/* Diseño Móvil: vertical */}
+                    <div className="md:hidden">
+                      {/* Header: timestamp + username */}
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-xs text-green-600 font-mono">
+                          [{formatTimestamp(message.created_at)}]
                           </span>
-                        </>
-                      )}:
+                        <span 
+                          className={`font-semibold text-sm ${
+                            agentInfo ? agentInfo.textColor : ''
+                          }`}
+                          style={!isAI ? getUsernameColor(message.avatar_color) : undefined}
+                        >
+                          {agentInfo ? `${agentInfo.icon} ${agentInfo.name}` : message.username}:
                     </span>
+                      </div>
                     
-                    {/* Mensaje con estilo diferente para cada IA */}
-                    <span className={`flex-1 break-words text-sm md:text-base ${
-                      isNeo 
-                        ? 'text-cyan-300 italic' 
-                        : isLatamara
-                        ? 'text-pink-300 font-normal'
-                        : isBarrilinter
-                        ? 'text-orange-300 italic'
+                      {/* Mensaje ocupando todo el ancho */}
+                      <div className={`break-words text-sm leading-relaxed ${
+                        agentInfo 
+                          ? `${agentInfo.textColor} opacity-90` 
                         : 'text-green-400'
                     }`}>
                       {message.content}
-                    </span>
+                      </div>
+                    </div>
                   </div>
                   
-                  {/* Indicadores adicionales para mensajes de IA */}
-                  {isNeo && (
-                    <div className="text-xs text-cyan-600 mt-1 ml-16 md:ml-20">
-                      {'>'} Respuesta desde el año 2157
-                    </div>
-                  )}
-                  {isLatamara && (
-                    <div className="text-xs text-pink-600 mt-1 ml-16 md:ml-20">
-                      {'>'} Respuesta desde el barrio de Vallecas
-                    </div>
-                  )}
-                  {isBarrilinter && (
-                    <div className="text-xs text-orange-600 mt-1 ml-16 md:ml-20">
-                      {'>'} Sabiduría de barrio con internet en tiempo real
+                  {/* Indicadores de IA más sutiles */}
+                  {agentInfo && (
+                    <div className={`text-xs ${agentInfo.textColor} opacity-60 mt-1 ${
+                      agentInfo ? 'ml-4 md:ml-16' : 'ml-16'
+                    }`}>
+                      {'>'} {agentInfo.specialty}
                     </div>
                   )}
                 </div>
@@ -302,20 +431,11 @@ const Chat: React.FC<ChatProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input de mensaje */}
-        <div className="bg-gray-950 border-t border-green-500 p-3 md:p-4">
-          <div className="flex items-center space-x-2 md:space-x-3">
-            <span className="text-green-500 text-xs md:text-sm flex-shrink-0">
-              [
-              {/* Versión móvil truncada */}
-              <span className="md:hidden">
-                {truncateUsernameForMobile(currentUser.username)}
-              </span>
-              {/* Versión desktop completa */}
-              <span className="hidden md:inline">
-                {currentUser.username}
-              </span>
-              ]$
+        {/* Input de mensaje simplificado */}
+        <div className="bg-gradient-to-r from-gray-950 to-gray-900 border-t border-green-500 p-4">
+          <div className="flex items-center space-x-3">
+            <span className="text-green-500 text-sm flex-shrink-0 font-mono">
+              [{currentUser.username}]$
             </span>
             
             <div className="flex-1 relative">
@@ -325,13 +445,13 @@ const Chat: React.FC<ChatProps> = ({
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Escribe tu mensaje..."
-                className="w-full bg-transparent text-green-400 placeholder-green-700 outline-none border-none text-sm md:text-base py-1"
+                placeholder="Escribe tu mensaje o usa @neo, @latamara, @barrilinter..."
+                className="w-full bg-transparent text-green-400 placeholder-green-700 outline-none border-none text-sm py-2"
                 maxLength={500}
                 autoComplete="off"
               />
               {showCursor && inputMessage === '' && (
-                <div className="absolute left-0 top-1 text-green-400 pointer-events-none text-sm md:text-base">
+                <div className="absolute left-0 top-2 text-green-400 pointer-events-none text-sm">
                   _
                 </div>
               )}
@@ -340,27 +460,18 @@ const Chat: React.FC<ChatProps> = ({
             <button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim()}
-              className="text-green-500 hover:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm px-2 py-1 border border-green-500 rounded hover:bg-green-500 hover:text-black transition-colors flex-shrink-0"
+              className="text-green-500 hover:text-black hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-4 py-2 border border-green-500 rounded-lg transition-all flex-shrink-0 font-semibold"
             >
               ENVIAR
             </button>
           </div>
           
-                     {/* Info del input */}
-           <div className="text-xs text-green-600 mt-2 space-y-1">
-             <div className="flex justify-between items-center">
-               <span>{'>'} Presiona ENTER para enviar</span>
-               <span className="text-right">{inputMessage.length}/500</span>
-             </div>
-             <div className="text-cyan-600">
-               {'>'} Escribe &quot;@neo [mensaje]&quot; para la IA del futuro
-             </div>
-             <div className="text-pink-600">
-               {'>'} Escribe &quot;@latamara [mensaje]&quot; para la choni del barrio
-             </div>
-             <div className="text-orange-600">
-               {'>'} Escribe &quot;@barrilinter [mensaje]&quot; para el culto de barrio con internet
-             </div>
+          {/* Contador de caracteres más discreto */}
+          <div className="flex justify-between items-center mt-2 text-xs text-green-700">
+            <span>ENTER para enviar • ESC para limpiar</span>
+            <span className={`font-mono ${inputMessage.length > 450 ? 'text-yellow-500' : ''}`}>
+              {inputMessage.length}/500
+            </span>
            </div>
         </div>
       </div>
